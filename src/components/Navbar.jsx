@@ -80,6 +80,7 @@ const Navbar = ({ onLogout }) => {
     const userId = getUserId();
     if (userId) {
       localStorage.removeItem(`selectedCar_${userId}`);
+      localStorage.removeItem('userId');
     }
     onLogout();
   };
