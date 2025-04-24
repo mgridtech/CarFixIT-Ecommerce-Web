@@ -81,6 +81,8 @@ const Navbar = ({ onLogout }) => {
     if (userId) {
       localStorage.removeItem(`selectedCar_${userId}`);
       localStorage.removeItem('userId');
+      localStorage.removeItem(`cartItems_${userId}`);  
+      localStorage.removeItem(`wishlistItems_${userId}`);
     }
     onLogout();
   };
