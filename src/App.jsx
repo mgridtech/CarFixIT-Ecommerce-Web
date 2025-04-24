@@ -31,6 +31,7 @@ import { SelectedCarProvider } from './contexts/SelectedCarContext';
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ProfilePage from "./pages/Profile";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -200,6 +201,14 @@ function AppContent() {
               />
               <Route path="/car-details/:admincarId" element={<CarDetailsForm />} />
               <Route path="*" element={<Navigate to="/" />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
           <Footer /> {/* Always render Footer */}

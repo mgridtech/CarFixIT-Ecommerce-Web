@@ -56,7 +56,7 @@ const HeroSection = () => {
         <img
           src={loaderSvg}
           alt="Loading..."
-          className="w-58 h-58 animate-spin"
+          className="w-33 h-33 animate-spin"
         />
         {/* <p className="mt-4 text-lg font-medium text-gray-600">Loading banners...</p> */}
       </div>

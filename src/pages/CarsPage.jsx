@@ -103,7 +103,7 @@ const CarsPage = () => {
         <img
           src={loaderSvg}
           alt="Loading..."
-          className="w-58 h-58 animate-spin"
+          className="w-33 h-33 animate-spin"
         />
       </div>
     );

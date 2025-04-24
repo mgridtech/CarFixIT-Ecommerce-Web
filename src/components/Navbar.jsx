@@ -8,6 +8,7 @@ import {
   faShoppingCart,
   faHeart,
   faCar,
+  faUser
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../assets/images/logo.png";
 import { useCart } from "../contexts/CartContext";
@@ -30,7 +31,7 @@ const Navbar = ({ onLogout }) => {
 
   const updateCartCount = () => {
     const cartsItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
-    const uniqueProductCount = cartsItems.length; 
+    const uniqueProductCount = cartsItems.length;
     setCartItemCount(uniqueProductCount);
   };
 
@@ -42,8 +43,8 @@ const Navbar = ({ onLogout }) => {
 
     const storedCar = localStorage.getItem(`selectedCar_${userId}`);
     if (storedCar) {
-      setSelectedCar(JSON.parse(storedCar)); 
-      return; 
+      setSelectedCar(JSON.parse(storedCar));
+      return;
     }
 
     try {
@@ -51,7 +52,7 @@ const Navbar = ({ onLogout }) => {
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         const lastCar = result.data[result.data.length - 1];
         setSelectedCar(lastCar);
-        localStorage.setItem(`selectedCar_${userId}`, JSON.stringify(lastCar)); 
+        localStorage.setItem(`selectedCar_${userId}`, JSON.stringify(lastCar));
       } else {
         setSelectedCar(null);
       }
@@ -81,7 +82,7 @@ const Navbar = ({ onLogout }) => {
     if (userId) {
       localStorage.removeItem(`selectedCar_${userId}`);
       localStorage.removeItem('userId');
-      localStorage.removeItem(`cartItems_${userId}`);  
+      localStorage.removeItem(`cartItems_${userId}`);
       localStorage.removeItem(`wishlistItems_${userId}`);
     }
     onLogout();
@@ -161,7 +162,7 @@ const Navbar = ({ onLogout }) => {
           </li>
 
           {/* Wishlist Icon with Badge */}
-          <li className="relative">
+          {/* <li className="relative">
             <Link
               to="/wishlist"
               className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
@@ -173,7 +174,7 @@ const Navbar = ({ onLogout }) => {
                 </span>
               )}
             </Link>
-          </li>
+          </li> */}
 
           {/* Cart Icon with Badge */}
           <li className="relative">
@@ -187,6 +188,15 @@ const Navbar = ({ onLogout }) => {
                   {cartItemCount}
                 </span>
               )}
+            </Link>
+          </li>
+
+          <li className="relative">
+            <Link
+              to="/profile"
+              className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
+            >
+              <FontAwesomeIcon icon={faUser} className="text-xl" />
             </Link>
           </li>
 

@@ -101,7 +101,7 @@ const EcommerceProductsPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <img src={loaderSvg} alt="Loading..." className="w-58 h-58 animate-spin" />
+        <img src={loaderSvg} alt="Loading..." className="w-33 h-33 animate-spin" />
       </div>
     );
   }
