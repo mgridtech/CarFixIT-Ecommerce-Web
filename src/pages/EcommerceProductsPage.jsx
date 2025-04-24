@@ -110,25 +110,13 @@ const EcommerceProductsPage = () => {
     return (
       <section className="w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <button
-            onClick={() => navigate('/cars')}
-            className="mb-6 flex items-center text-[#8B1E51] hover:text-[#6e1641]"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-1"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Select a car
-          </button>
           <p className="text-lg font-medium text-gray-600">{noProductsMessage}</p>
+          <button style={{ marginTop: "30px" }}
+          onClick={() => navigate("/cars")}
+          className="px-6 py-3 bg-[#8B1E51] text-white font-medium rounded-md hover:bg-[#6e1641] transition-colors"
+        >
+          Select a Car
+        </button>
         </div>
       </section>
     );
