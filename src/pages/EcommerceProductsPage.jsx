@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getEcommerceProductsByCategoryAndCar } from "../pages/Services/Services.jsx";
-import loaderSvg from "../assets/oval.svg"; // Import your SVG loader
+import loaderSvg from "../assets/oval.svg";
+import { getUserId } from "../utils/auth.js";
 
 const EcommerceProductsPage = () => {
   const { categoryId } = useParams();
@@ -12,6 +13,7 @@ const EcommerceProductsPage = () => {
   const [error, setError] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [noProductsMessage, setNoProductsMessage] = useState("");
 
   const formatImageUrl = (imageData) => {
     if (!imageData) return "https://via.placeholder.com/300x200?text=No+Image";
@@ -26,17 +28,50 @@ const EcommerceProductsPage = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await getEcommerceProductsByCategoryAndCar(categoryId);
-
+        // Retrieve userId and adminCarId from local storage
+        const userId = getUserId(); // Dynamically get the userId
+        const selectedCarKey = `selectedCar_${userId}`;
+        const selectedCarData = localStorage.getItem(selectedCarKey);
+  
+        if (!selectedCarData) {
+          // Handle case where no car is selected
+          setNoProductsMessage("No car selected. Please select a car.");
+          setLoading(false); // Stop loading
+          return;
+        }
+  
+        const selectedCar = JSON.parse(selectedCarData);
+        const adminCarId = selectedCar?.adminCarId;
+  
+        if (!adminCarId) {
+          // Handle case where adminCarId is missing
+          setNoProductsMessage("No car selected. Please select a car.");
+          setLoading(false); // Stop loading
+          return;
+        }
+  
+        // Call the API with categoryId and adminCarId
+        const response = await getEcommerceProductsByCategoryAndCar(categoryId, adminCarId);
+  
         if (response && response.data) {
+          console.log("API Response:", response.data); // Debugging: Log the API response
+  
+          // Check if the response contains a message about no products
+          if (
+            response.message === "No products found in this category." ||
+            (Array.isArray(response.data.products) && response.data.products.length === 0)
+          ) {
+            setNoProductsMessage("No products are associated with this car. Please select a different car.");
+          }
+  
           const processedProducts = (response.data.products || []).map((product) => ({
             ...product,
             formattedImage: formatImageUrl(product.image),
           }));
-
+  
           setProducts(processedProducts);
           setSubcategories(response.data.subcategories || []);
-
+  
           if (response.data.subcategories && response.data.subcategories.length > 0) {
             setSelectedSubcategory(response.data.subcategories[0].id);
           }
@@ -50,7 +85,7 @@ const EcommerceProductsPage = () => {
         setLoading(false);
       }
     };
-
+  
     fetchProducts();
   }, [categoryId]);
 
@@ -64,18 +99,41 @@ const EcommerceProductsPage = () => {
   }, [selectedSubcategory, products]);
 
   if (loading) {
-    // Show the loader while data is being fetched
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src={loaderSvg}
-          alt="Loading..."
-          className="w-58 h-58 animate-spin"
-        />
+        <img src={loaderSvg} alt="Loading..." className="w-58 h-58 animate-spin" />
       </div>
     );
   }
-
+  
+  if (noProductsMessage) {
+    return (
+      <section className="w-full flex flex-col items-center justify-center min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <button
+            onClick={() => navigate('/cars')}
+            className="mb-6 flex items-center text-[#8B1E51] hover:text-[#6e1641]"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-1"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Select a car
+          </button>
+          <p className="text-lg font-medium text-gray-600">{noProductsMessage}</p>
+        </div>
+      </section>
+    );
+  }
+  
   if (error) {
     return (
       <section className="w-full py-12">
@@ -85,12 +143,14 @@ const EcommerceProductsPage = () => {
       </section>
     );
   }
-
+  
   if (!products || products.length === 0) {
     return (
-      <section className="w-full py-12">
+      <section className="w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p>No products available for this category.</p>
+          <p className="text-lg font-medium text-gray-600">
+            No products are associated with this car. Please select a different car.
+          </p>
         </div>
       </section>
     );
@@ -134,24 +194,26 @@ const EcommerceProductsPage = () => {
         </div>
 
         {/* Subcategories Filter */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Available Categories</h2>
-          <div className="flex flex-wrap gap-3">
-            {subcategories.map((subcat) => (
-              <button
-                key={subcat.id}
-                onClick={() => setSelectedSubcategory(subcat.id)}
-                className={`px-4 py-2 rounded-full transition-colors ${
-                  selectedSubcategory === subcat.id
-                    ? "bg-[#8B1E51] text-white shadow-md"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-              >
-                {subcat.name}
-              </button>
-            ))}
+        {subcategories.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Available Categories</h2>
+            <div className="flex flex-wrap gap-3">
+              {subcategories.map((subcat) => (
+                <button
+                  key={subcat.id}
+                  onClick={() => setSelectedSubcategory(subcat.id)}
+                  className={`px-4 py-2 rounded-full transition-colors ${
+                    selectedSubcategory === subcat.id
+                      ? "bg-[#8B1E51] text-white shadow-md"
+                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  }`}
+                >
+                  {subcat.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Products */}
         <div>
