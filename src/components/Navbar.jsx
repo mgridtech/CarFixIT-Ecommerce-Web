@@ -117,7 +117,7 @@ const Navbar = ({ onLogout }) => {
               onClick={handleCarClick}
               className="hidden md:flex items-center text-sm font-medium bg-orange-200 text-orange-800 px-3 py-1 rounded-lg shadow-sm"
             >
-              No Car Available
+              No Car Selected
             </button>
           )}
         </div>
@@ -226,7 +226,7 @@ const Navbar = ({ onLogout }) => {
               onClick={handleCarClick}
               className="block w-full text-left py-3 px-6 bg-orange-200 text-orange-800 rounded-md mb-4"
             >
-              No Car Available
+              No Car Selected
             </button>
           )}
 

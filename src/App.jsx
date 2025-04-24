@@ -27,7 +27,10 @@ import NoCarsPage from "./pages/NoCarsPage";
 import CarModels from "./components/CarModels";
 import CarDetailsForm from "./components/CarDetailsForm";
 import ForgotPassword from "./pages/ForgotPassword";
-import { SelectedCarProvider } from './contexts/SelectedCarContext'; // Import SelectedCarProvider
+import { SelectedCarProvider } from './contexts/SelectedCarContext';
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -39,16 +42,16 @@ function ScrollToTop() {
   return null;
 }
 
-function App() {
+function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 3000);
 
-    // Check authentication status
     setIsLoggedIn(getAuth());
 
     return () => clearTimeout(timer);
@@ -61,94 +64,165 @@ function App() {
   const handleLogout = () => {
     clearAuth();
     setIsLoggedIn(false);
-    // Redirect to login after logout
     window.location.href = '/login';
   };
 
+  // Define routes where the Navbar should not be displayed
+  const hideNavbarRoutes = ["/login", "/signup", "/forgot-password"];
+  const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
+
   return (
-    <CartProvider>
-      <CarProvider>
-        <WishlistProvider>
-          <SelectedCarProvider> {/* Wrap the app with SelectedCarProvider */}
-            <div className="flex flex-col min-h-screen">
-              {isLoading ? (
-                <SplashScreen />
-              ) : (
-                <Router>
-                  <ScrollToTop />
-                  {isLoggedIn && <Navbar onLogout={handleLogout} />}
-                  <main className="flex-grow">
-                    <Routes>
-                      <Route
-                        path="/"
-                        element={isLoggedIn ? <Home /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/login"
-                        element={isLoggedIn ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
-                      />
-                      <Route
-                        path="/signup"
-                        element={isLoggedIn ? <Navigate to="/" /> : <SignupPage />}
-                      />
-                      <Route
-                        path="/forgot-password"
-                        element={<ForgotPassword />}
-                      />
+    <div className="flex flex-col min-h-screen">
+      {isLoading ? (
+        <SplashScreen />
+      ) : (
+        <>
+          <ScrollToTop />
+          {shouldShowNavbar && <Navbar onLogout={handleLogout} />} {/* Always render Navbar except on specific routes */}
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route
+                path="/login"
+                element={isLoggedIn ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+              />
+              <Route
+                path="/signup"
+                element={isLoggedIn ? <Navigate to="/" /> : <SignupPage />}
+              />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route
+                path="/services/:serviceId"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <ServiceProductsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ecommerce/:categoryId"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <EcommerceProductsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/services/:serviceId/products/:productId"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <ServiceProductsDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ecommerce/:categoryId/products/:productId"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <EcommerceProductsDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/blog"
+                element={
+                    <Blog />
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                    <AboutUs />
+                }
+              />
+              <Route
+                path="/contact"
+                element={
+                    <Contact />
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <Cart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout/address"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <Address />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order-confirmation"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <OrderConfirmation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cars"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <CarsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/add-car"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <AddCarPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/no-car"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <NoCarsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/car-models/:brandId" element={<CarModels />} />
+              <Route
+                path="/wishlist"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <Wishlist />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/car-details/:admincarId" element={<CarDetailsForm />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </main>
+          <Footer /> {/* Always render Footer */}
+        </>
+      )}
+    </div>
+  );
+}
 
-                      <Route
-                        path="/services/:serviceId"
-                        element={isLoggedIn ? <ServiceProductsPage /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/ecommerce/:categoryId"
-                        element={isLoggedIn ? <EcommerceProductsPage /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/services/:serviceId/products/:productId"
-                        element={isLoggedIn ? <ServiceProductsDetails /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/ecommerce/:categoryId/products/:productId"
-                        element={isLoggedIn ? <EcommerceProductsDetails /> : <Navigate to="/login" />}
-                      />
-
-                      <Route
-                        path="/blog"
-                        element={isLoggedIn ? <Blog /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/about"
-                        element={isLoggedIn ? <AboutUs /> : <Navigate to="/login" />}
-                      />
-                      <Route
-                        path="/contact"
-                        element={isLoggedIn ? <Contact /> : <Navigate to="/login" />}
-                      />
-                      <Route path="/cart" element={isLoggedIn ? <Cart /> : <Navigate to="/login" />} />
-                      <Route path="/checkout/address" element={isLoggedIn ? <Address /> : <Navigate to="/login" />} />
-                      <Route path="/order-confirmation" element={isLoggedIn ? <OrderConfirmation /> : <Navigate to="/login" />} />
-                      <Route path="/cars" element={isLoggedIn ? <CarsPage /> : <Navigate to="/login" />} />
-                      <Route path="/add-car" element={isLoggedIn ? <AddCarPage /> : <Navigate to="/login" />} />
-                      <Route path="/no-car" element={isLoggedIn ? <NoCarsPage /> : <Navigate to="/login" />} />
-                      <Route path="/car-models/:brandId" element={<CarModels />} />
-                      <Route path="/wishlist" element={isLoggedIn ? <Wishlist /> : <Navigate to="/login" />} />
-                      <Route path="/car-details/:admincarId" element={<CarDetailsForm />} />
-
-                      <Route
-                        path="*"
-                        element={<Navigate to={isLoggedIn ? "/" : "/login"} />}
-                      />
-                    </Routes>
-                  </main>
-                  {isLoggedIn && <Footer />}
-                </Router>
-              )}
-            </div>
-          </SelectedCarProvider>
-        </WishlistProvider>
-      </CarProvider>
-    </CartProvider>
+function App() {
+  return (
+    <Router>
+      <CartProvider>
+        <CarProvider>
+          <WishlistProvider>
+            <SelectedCarProvider>
+              <AppContent />
+              <ToastContainer /> 
+            </SelectedCarProvider>
+          </WishlistProvider>
+        </CarProvider>
+      </CartProvider>
+    </Router>
   );
 }
 
