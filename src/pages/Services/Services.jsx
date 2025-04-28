@@ -768,6 +768,58 @@ export const editAddress = async (userId, addressId, payload) => {
   }
 };
 
+export const getProfile = async (userId) => {
+  try {
+    const response = await fetch(`${baseURL}/user/${userId}/getProfile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Fetched User Profile for User ID:", userId, result); // Debugging log
+
+    // Return the whole result object
+    return { 
+      success: true, 
+      data: result 
+    };
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const updateProfile = async (userId, payload) => {
+  try {
+    const response = await fetch(`${baseURL}/user/${userId}/updateprofile`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      console.error("Error response text:", errorText);
+      throw new Error(`Failed to update profile: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Profile updated successfully:", result); // Debugging log
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 const Services = () => {
   return (
     <div>
