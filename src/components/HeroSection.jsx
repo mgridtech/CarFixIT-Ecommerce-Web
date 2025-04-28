@@ -3,11 +3,18 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import { getPromotionalBanners } from "../pages/Services/Services.jsx";
-import loaderSvg from "../assets/oval.svg"; // Import your SVG loader
+import { useNavigate } from "react-router-dom"; // Add this import
+
 
 const HeroSection = () => {
+  const navigate = useNavigate(); // Initialize useNavigate hook
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true); // State to track loading
+
+  const handleBannerClick = (productId) => {
+    console.log("Clicked product ID:", productId);
+    navigate(`/productdetails/${productId}`);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -50,15 +57,9 @@ const HeroSection = () => {
   };
 
   if (loading) {
-    // Show the loader while data is being fetched
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src={loaderSvg}
-          alt="Loading..."
-          className="w-33 h-33 animate-spin"
-        />
-        {/* <p className="mt-4 text-lg font-medium text-gray-600">Loading banners...</p> */}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-28 w-28 border-t-2 border-b-2 border-[#8B1E51]"></div>
       </div>
     );
   }
@@ -78,7 +79,8 @@ const HeroSection = () => {
             <img
               src={getImageSrc(slide.image)}
               alt={`Banner ${slide.bannerType}`}
-              className="w-full h-auto object-cover"
+              className="w-full h-auto object-cover cursor-pointer"
+              onClick={() => handleBannerClick(slide.productId)} // Add click handler
             />
           </SwiperSlide>
         ))}

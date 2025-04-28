@@ -32,6 +32,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ProfilePage from "./pages/Profile";
+import MyOrders from "./pages/MyOrders";
+import OrderDetails from "./pages/OrderDetails";
+import MyAddresses from "./pages/MyAddresses";
+import ProductsDetails from "./pages/ProductDetails";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -127,19 +131,19 @@ function AppContent() {
               <Route
                 path="/blog"
                 element={
-                    <Blog />
+                  <Blog />
                 }
               />
               <Route
                 path="/about"
                 element={
-                    <AboutUs />
+                  <AboutUs />
                 }
               />
               <Route
                 path="/contact"
                 element={
-                    <Contact />
+                  <Contact />
                 }
               />
               <Route
@@ -209,6 +213,39 @@ function AppContent() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/my-orders"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <MyOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-addresses"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <MyAddresses />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order-details/:id"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <OrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/productdetails/:productId"
+                element={
+                  <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <ProductsDetails />
+                  </ProtectedRoute>
+                }
+              />
+
             </Routes>
           </main>
           <Footer /> {/* Always render Footer */}
@@ -226,7 +263,7 @@ function App() {
           <WishlistProvider>
             <SelectedCarProvider>
               <AppContent />
-              <ToastContainer /> 
+              <ToastContainer />
             </SelectedCarProvider>
           </WishlistProvider>
         </CarProvider>

@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getCarModelByBrand } from "../pages/Services/Services.jsx"; // Adjust the import path as needed
-import loaderSvg from "../assets/oval.svg"; // Import your SVG loader
 
 const CarModels = ({ onBack }) => {
   const { brandId } = useParams(); // Get brandId from the URL
@@ -43,12 +42,8 @@ const CarModels = ({ onBack }) => {
   if (loading) {
     // Show the loader while data is being fetched
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src={loaderSvg}
-          alt="Loading..."
-          className="w-33 h-33 animate-spin"
-        />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-28 w-28 border-t-2 border-b-2 border-[#8B1E51]"></div>
       </div>
     );
   }

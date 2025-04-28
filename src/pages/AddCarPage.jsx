@@ -4,7 +4,6 @@ import CarBrands from '../components/CarBrands';
 import CarModels from '../components/CarModels';
 import CarDetailsForm from '../components/CarDetailsForm';
 import { getCarBrand } from "../pages/Services/Services.jsx";
-import loaderSvg from "../assets/oval.svg"; // Import your SVG loader
 
 const AddCarPage = () => {
   const [step, setStep] = useState(1);
@@ -68,12 +67,8 @@ const AddCarPage = () => {
   if (loading) {
     // Show the loader while data is being fetched
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src={loaderSvg}
-          alt="Loading..."
-          className="w-33 h-33 animate-spin"
-        />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-28 w-28 border-t-2 border-b-2 border-[#8B1E51]"></div>
       </div>
     );
   }

@@ -820,6 +820,159 @@ export const updateProfile = async (userId, payload) => {
   }
 };
 
+export const getMyOrders = async (userId) => {
+  try {
+    const response = await fetch(`${baseURL}/userOrders/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user orders: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log("Fetched Orders for User ID:", userId, result); // Debugging log
+    
+    // Return the whole result object
+    return {
+      success: true,
+      data: result
+    };
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getOrderDetails = async (orderId) => {
+  try {
+    const response = await fetch(`${baseURL}/orderDetails/${orderId}?role=user`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch order details: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log("Fetched Order Details for Order ID:", orderId, result);
+    
+    return {
+      success: true,
+      data: result
+    };
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const cancelOrder = async (userId, orderId) => {
+  try {
+    
+    const response = await fetch(`${baseURL}/cancel/order`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        orderId
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: data.message || `Error: ${response.status} - ${response.statusText}` 
+      };
+    }
+    
+    return {
+      success: true,
+      data
+    };
+  } catch (error) {
+    console.error("Error in cancelOrder:", error);
+    return {
+      success: false,
+      error: error.message || "An unexpected error occurred"
+    };
+  }
+};
+
+export const getProductDetails = async (productId, role, carId) => {
+  try {
+    const response = await fetch(
+      `${baseURL}/productDetails/${productId}?role=${role}&carId=${carId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error fetching product details: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result?.data) {
+      console.error("Unexpected API response format:", result);
+      return { error: "Unexpected API response format", data: null };
+    }
+
+    console.log("Fetched product details:", result.data);
+    return { error: null, data: result.data };
+  } catch (error) {
+    console.error("Error fetching product details:", error);
+    return { error: error.message, data: null };
+  }
+};
+
+// export const getBrands = async (categoryId) => {
+//   try {
+//     const response = await fetch(
+//       `${baseURL}/get/${categoryId}/brandbyCategory`,
+//       {
+//         method: "GET",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     if (!response.ok) {
+//       throw new Error(`Error fetching brands: ${response.status}`);
+//     }
+
+//     const result = await response.json();
+
+//     if (!result?.data) {
+//       console.error("Unexpected API response format:", result);
+//       return { error: "Unexpected API response format", data: null };
+//     }
+
+//     console.log("Fetched brands:", result.data);
+//     return { error: null, data: result.data };
+//   } catch (error) {
+//     console.error("Error fetching brands:", error);
+//     return { error: error.message, data: null };
+//   }
+// };
+
+
+
 const Services = () => {
   return (
     <div>
