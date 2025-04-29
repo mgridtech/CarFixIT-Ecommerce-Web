@@ -34,91 +34,126 @@ export default function Signup() {
     }));
   };
 
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) return; // Restrict input to one character
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Move to the next input box
-    if (value && index < otpRefs.current.length - 1) {
-      otpRefs.current[index + 1].focus();
-    }
-  };
-
   const handleSendOtp = async () => {
     try {
-      const result = await generateOTP(formData.email, 'registration'); // Call generateOTP with email and otpType
+      const result = await generateOTP(formData.email, 'registration');
+      console.log('Service function result:', result);
+      
       if (result.success) {
         console.log('OTP generated successfully:', result.data);
         setError('OTP has been sent to your email.'); 
         setShowOtpFields(true); 
       } else {
         console.error('Failed to generate OTP:', result.error);
-        setError(result.data?.message || 'User already exists with this email, Please login'); // Use API response message
-        setShowOtpFields(false); // Hide OTP fields on error
+        // Use the error message returned from the service function
+        setError(result.error);
+        setShowOtpFields(false);
       }
     } catch (error) {
       console.error('Error generating OTP:', error);
-      setError('An error occurred while generating OTP. Please try again.'); // Set generic error message
-      setShowOtpFields(false); // Hide OTP fields on error
+      setError(error.message || 'An error occurred while generating OTP');
+      setShowOtpFields(false);
     }
   };
-
+  
   const handleVerifyOtp = async () => {
-    const enteredOtp = otp.join(''); // Combine the OTP digits into a single string
+    const enteredOtp = otp.join('');
     console.log('Verifying OTP:', enteredOtp);
-
+  
     try {
-      const result = await verifyOTP(formData.email, 'registration', enteredOtp); // Call verifyOTP with email, otpType, and otp
+      const result = await verifyOTP(formData.email, 'registration', enteredOtp);
+      console.log('Service function result:', result);
+      
       if (result.success) {
         console.log('OTP verified successfully:', result.data);
-
-        // Store the OTP ID in the `otpId` state
         const otpRecordId = result.data.data.otprecordid;
-        console.log(otpRecordId,"111");
+        console.log(otpRecordId, "111");
         
-        setOtpId(otpRecordId); // Store otpId in a separate state
-        console.log('Stored otpId:', otpRecordId); // Debugging log
-
-        setError('OTP verified successfully!'); // Set success message
-        setShowOtpFields(false); // Hide OTP fields on successful verification
-        setIsOtpVerified(true); // Mark OTP as verified
+        setOtpId(otpRecordId);
+        console.log('Stored otpId:', otpRecordId);
+  
+        setError('OTP verified successfully!');
+        setShowOtpFields(false);
+        setIsOtpVerified(true);
       } else {
         console.error('Invalid OTP:', result.error);
-        setError(result.data?.message || 'Invalid OTP. Please try again.'); // Use API response message
+        // Use the error message returned from the service function
+        setError(result.error);
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      setError('An error occurred while verifying OTP. Please try again.');
+      setError(error.message || 'An error occurred while verifying OTP');
     }
   };
-
-  const handleOtpPopupClose = () => {
-    // Close the popup and show OTP fields
-    setShowOtpPopup(false);
-    setShowOtpFields(true);
-    setTimer(120); // Reset the timer to 2 minutes
-    setIsResendDisabled(true); // Disable the resend button
-  };
-
+  
   const handleResendOtp = async () => {
     console.log('Resending OTP...');
-
+  
     try {
-      const result = await generateOTP(formData.email, 'registration'); // Call generateOTP with email and otpType
+      const result = await generateOTP(formData.email, 'registration');
       if (result.success) {
         console.log('OTP resent successfully:', result.data);
-        setError('OTP has been resent to your email.'); // Set success message
-        setTimer(120); // Reset the timer to 2 minutes
-        setIsResendDisabled(true); // Disable the resend button again
+        setError('OTP has been resent to your email.');
+        setTimer(120);
+        setIsResendDisabled(true);
       } else {
-        console.error('Failed to resend OTP:', result.error);
-        setError(result.data?.message || 'Failed to resend OTP. Please try again.'); // Use API response message
+        console.error('Failed to resend OTP:', result);
+        // Extract error message directly from the response
+        const errorMessage = result.message || result.error || 'Failed to resend OTP';
+        console.log('Error message received:', errorMessage);
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Error resending OTP:', error);
-      setError('An error occurred while resending OTP. Please try again.'); // Set generic error message
+      // If error has a message property, use it
+      const errorMessage = error.message || 'An error occurred while resending OTP';
+      console.log('Error message received:', errorMessage);
+      setError(errorMessage);
+    }
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+  
+    try {
+      if (!otpId) {
+        setError('OTP verification is required before registration.');
+        setIsLoading(false);
+        return;
+      }
+  
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        otpId,
+      };
+  
+      console.log('Submitting registration with userData:', userData);
+  
+      const result = await registerUser(userData);
+  
+      if (result.success) {
+        console.log('User registered successfully:', result.data);
+        navigate('/login');
+      } else {
+        console.error('Registration failed:', result);
+        // Extract error message directly from the response
+        const errorMessage = result.message || result.error || 'Registration failed. Please try again.';
+        console.log('Error message received:', errorMessage);
+        setError(errorMessage);
+      }
+    } catch (err) {
+      console.error('Error registering user:', err);
+      // If err has a message property, use it
+      const errorMessage = err.message || 'Registration failed. Please try again.';
+      console.log('Error message received:', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,46 +161,6 @@ export default function Signup() {
     // Basic email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      // Check if `otpId` is present
-      if (!otpId) {
-        setError('OTP verification is required before registration.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Create the payload with the `otpId`
-      const userData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        otpId, // Use the separate otpId state
-      };
-
-      console.log('Submitting registration with userData:', userData); // Debugging log
-
-      const result = await registerUser(userData);
-
-      if (result.success) {
-        console.log('User registered successfully:', result.data);
-        navigate('/login'); // Redirect to login page
-      } else {
-        setError(result.error || 'Registration failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error registering user:', err);
-      setError('Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
 
@@ -207,8 +202,8 @@ export default function Signup() {
           {error && (
             <div
               className={`mb-4 p-2 text-sm rounded ${error === 'OTP has been sent to your email.' || error === 'OTP verified successfully!' || error === 'OTP has been resent to your email'
-                ? 'bg-green-50 text-green-600' // Success message styling
-                : 'bg-red-50 text-red-600' // Error message styling
+                ? 'bg-green-50 text-green-600'
+                : 'bg-red-50 text-red-600' 
                 }`}
             >
               {error}

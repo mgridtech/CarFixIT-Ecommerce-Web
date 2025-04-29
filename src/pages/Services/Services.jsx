@@ -362,20 +362,25 @@ export const loginUser = async (input, password) => {
 
 export const generateOTP = async (email, otpType = 'registration') => {
   try {
-    const response = await fetch(`${baseURL}/generateOtp`, { // Prepend baseURL to the endpoint
+    const response = await fetch(`${baseURL}/generateOtp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, otpType }), // Send email and otpType as payload
+      body: JSON.stringify({ email, otpType }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to generate OTP: ${response.statusText}`);
-    }
-
     const result = await response.json();
-    return { success: true, data: result };
+    console.log('API Response:', result);
+
+    if (response.ok) {
+      return { success: true, data: result };
+    } else {
+      return { 
+        success: false, 
+        error: result.message || `Failed to generate OTP: ${response.statusText}`
+      };
+    }
   } catch (error) {
     console.error('Error generating OTP:', error);
     return { success: false, error: error.message };
@@ -384,20 +389,25 @@ export const generateOTP = async (email, otpType = 'registration') => {
 
 export const verifyOTP = async (email, otpType = 'registration', otp) => {
   try {
-    const response = await fetch(`${baseURL}/verifyOtp`, { // Prepend baseURL to the endpoint
+    const response = await fetch(`${baseURL}/verifyOtp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, otpType, otp }), // Send email, otpType, and otp as payload
+      body: JSON.stringify({ email, otpType, otp }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to verify OTP: ${response.statusText}`);
-    }
-
     const result = await response.json();
-    return { success: true, data: result };
+    console.log('API Response:', result); 
+
+    if (response.ok) {
+      return { success: true, data: result };
+    } else {
+      return { 
+        success: false, 
+        error: result.message || `Failed to verify OTP: ${response.statusText}`
+      };
+    }
   } catch (error) {
     console.error('Error verifying OTP:', error);
     return { success: false, error: error.message };
