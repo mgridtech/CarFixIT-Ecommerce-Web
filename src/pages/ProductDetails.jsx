@@ -285,7 +285,7 @@ const ProductsDetails = () => {
                                     <ul className="list-disc list-inside text-gray-600">
                                         {processedProperties.map((property, index) => (
                                             <li key={index}>
-                                                {property.name}: {property.value}
+                                                {property.name}: {property.value} {property.description}
                                             </li>
                                         ))}
                                     </ul>

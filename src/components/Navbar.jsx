@@ -7,7 +7,6 @@ import {
   faSignOutAlt,
   faShoppingCart,
   faHeart,
-  faCar,
   faUser
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../assets/images/logo.png";
@@ -243,8 +242,15 @@ const Navbar = ({ onLogout }) => {
               onClick={handleCarClick}
               className="flex items-center bg-white px-3 py-2 rounded-lg shadow-sm mb-4 cursor-pointer hover:bg-gray-100"
             >
-              <FontAwesomeIcon icon={faCar} className="text-orange-500 mr-2" />
-              <span className="text-sm font-medium">
+              {selectedCar.carImage ? (
+                <img
+                  src={`data:image/jpeg;base64,${selectedCar.carImage}`}
+                  alt={`${selectedCar.brand} ${selectedCar.model}`}
+                  className="w-10 h-10 mr-2" // Same size as typical FontAwesome icon
+                />
+              ) : (
+                <div className="w-4 h-4 mr-2 bg-gray-200 rounded-full"></div> // Placeholder if image is missing
+              )}              <span className="text-sm font-medium">
                 {selectedCar.brand} {selectedCar.model}
               </span>
             </div>

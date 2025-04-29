@@ -5,14 +5,47 @@ import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import { getCart } from '../pages/Services/Services.jsx'; // Import the getCart method
 import { getUserId } from '../utils/auth.js'; // Import the method to get userId
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesomeIcon
-import { faTrash } from '@fortawesome/free-solid-svg-icons'; // Import the trash icon
-import { removeFromCart, cartDecreaseQuantity, cartIncreaseQuantity } from '../pages/Services/Services.jsx';
+import { faTrash, faChevronDown } from '@fortawesome/free-solid-svg-icons'; // Import the trash icon
+import { removeFromCart, cartDecreaseQuantity, cartIncreaseQuantity, getCoupons, applyCoupon, deleteCoupon } from '../pages/Services/Services.jsx';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [discount, setDiscount] = useState(0);
+  const [coupons, setCoupons] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const result = await getCoupons();
+        if (result.success && result.data && result.data.data) {
+          // Transform API response to match UI expectations
+          // In your fetchCoupons useEffect
+          const transformedCoupons = result.data.data.map(coupon => ({
+            id: coupon.id, // Add this line
+            code: coupon.code,
+            type: coupon.discountType.toLowerCase(),
+            discountApply: coupon.discountAmount,
+            minOrder: coupon.minOrderAmount,
+            validUntil: coupon.expirationDate,
+            description: `Special offer for ${coupon.ProductCategoryModel.name} products`
+          }));
+          setCoupons(transformedCoupons);
+        } else {
+          setCoupons([]);
+        }
+      } catch (error) {
+        console.error("Error fetching coupons:", error);
+        setCoupons([]);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -69,6 +102,67 @@ const Cart = () => {
     setTotalPrice(newTotalPrice);
   }, [cartItems]);
 
+  const handleApplyCoupon = (coupon) => {
+    // Keep existing validation logic
+    if (new Date(coupon.validUntil) < new Date()) {
+      toast.error(`Coupon ${coupon.code} has expired`);
+      return;
+    }
+
+    if (totalPrice < coupon.minOrder) {
+      toast.error(`Minimum order amount of ₹${coupon.minOrder} required`);
+      return;
+    }
+
+    // Calculate discount amount based on coupon type
+    let discountAmount = coupon.discountApply; // Use the discountApply value directly from the coupon
+
+    console.log("Applied coupon:", coupon);
+    console.log("Discount amount:", discountAmount);
+    console.log("Original total:", totalPrice);
+    console.log("New total after discount:", totalPrice - discountAmount);
+
+    setSelectedCoupon(coupon);
+    setDiscount(discountAmount); // Use discountAmount here, not discountApply
+    setCouponOpen(false); // Close the coupon dropdown after applying
+  };
+
+  const removeCoupon = () => {
+
+    const userId = getUserId();
+    if (!userId) {
+      toast.error("User not logged in. Please log in to remove coupon.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    deleteCoupon(userId)
+      .then(response => {
+        if (response.success) {
+          toast.info(`Coupon ${selectedCoupon.code} removed`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          setSelectedCoupon(null);
+          setDiscount(0);
+        } else {
+          toast.error(response.error || "Failed to remove coupon", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Error removing coupon:", error);
+        toast.error("An unexpected error occurred while removing the coupon.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      });
+  };
+
   const increaseQuantity = async (cartItemId) => {
     const userId = getUserId();
     try {
@@ -118,7 +212,7 @@ const Cart = () => {
               : item
           )
         );
-  
+
         // Update localStorage
         const updatedCartItems = cartItems.map((item) =>
           item.cartItemId === cartItemId && item.quantity > 1
@@ -259,7 +353,7 @@ const Cart = () => {
                 <div key={item.cartItemId} className="bg-white rounded-lg shadow-md p-6 mb-4 relative">
                   <button
                     className="absolute top-2 right-2 text-[#8B1E51] hover:text-[#6e1641] transition"
-                    onClick={() => handleRemoveFromCart(item.cartItemId)} 
+                    onClick={() => handleRemoveFromCart(item.cartItemId)}
                   >
                     <FontAwesomeIcon icon={faTrash} className="h-5 w-5" />
                   </button>
@@ -309,12 +403,146 @@ const Cart = () => {
             <div className="md:w-1/3">
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
                 <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+
+                <div className="mb-4">
+
+                  {/* Coupon Section */}
+                  <div className="mb-4 border-t pt-4">
+                    <div
+                      className="flex justify-between items-center cursor-pointer mb-2"
+                      onClick={() => setCouponOpen(!couponOpen)}
+                    >
+                      <span className="text-[#8B1E51] font-medium">
+                        {selectedCoupon ? `Applied: ${selectedCoupon.code}` : "Have a coupon?"}
+                      </span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`h-4 w-4 transition-transform ${couponOpen ? 'transform rotate-180' : ''}`}
+                      />
+                    </div>
+
+                    {couponOpen && (
+                      <div className="mt-2 border rounded-md p-2 max-h-60 overflow-y-auto">
+                        {coupons.map((coupon) => (
+                          <div
+                            key={coupon.code}
+                            className="p-2 hover:bg-gray-50 border-b last:border-b-0 flex justify-between items-center"
+                          >
+                            <div className="flex-grow">
+                              <div className="font-medium flex justify-between">
+                                <span>{coupon.code}</span>
+                                {coupon.type === 'percentage' && (
+                                  <span className="text-orange-800">{coupon.discount}% OFF</span>
+                                )}
+                                {coupon.type === 'fixed' && (
+                                  <span className="text-orange-800">₹{coupon.discount} OFF</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-600">{coupon.description}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Discount amount: ₹{coupon.discountApply}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Valid until: {new Date(coupon.validUntil).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                const userId = getUserId();
+                                if (!userId) {
+                                  toast.error("Please login to apply coupons");
+                                  return;
+                                }
+
+                                // Call API applyCoupon method
+                                applyCoupon(userId, coupon.id)
+                                  .then(response => {
+                                    if (response.success) {
+                                      // Calculate the discount amount from the coupon
+                                      const discountAmount = parseFloat(coupon.discountApply);
+                                      console.log("Applied coupon:", coupon);
+                                      console.log("Discount amount:", discountAmount);
+                                      console.log("Original total:", totalPrice);
+                                      console.log("New total after discount:", totalPrice - discountAmount);
+
+                                      // Update state with the selected coupon and discount
+                                      setSelectedCoupon(coupon);
+                                      setDiscount(discountAmount);
+                                      setCouponOpen(false); // Close coupon dropdown
+
+                                      toast.success(`Coupon ${coupon.code} applied successfully!`, {
+                                        position: "top-right",
+                                        autoClose: 3000,
+                                      });
+                                    } else {
+                                      toast.error(response.error || "Failed to apply coupon", {
+                                        position: "top-right",
+                                        autoClose: 3000,
+                                      });
+                                    }
+                                  })
+                                  .catch(error => {
+                                    console.error("Coupon application error:", error);
+                                    toast.error("Failed to apply coupon", {
+                                      position: "top-right",
+                                      autoClose: 3000,
+                                    });
+                                  });
+                              }}
+                              className="ml-2 px-4 py-1 bg-[#8B1E51] text-white rounded-md hover:bg-[#6e1641] transition-colors text-sm"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedCoupon && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-orange-800">
+                          <span>Discount Applied:</span>
+                          <span>
+                            {selectedCoupon.type === 'percentage' && `${selectedCoupon.discount}% (₹${discount.toFixed(2)})`}
+                            {selectedCoupon.type === 'fixed' && `₹${selectedCoupon.discount}`}
+                          </span>
+                        </div>
+                        <button
+                          onClick={removeCoupon}
+                          className="text-sm text-red-500 mt-1 hover:underline"
+                        >
+                          Remove coupon
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Discounts */}
+                  {discount > 0 && (
+                    <div className="flex justify-between mb-2 text-green-600">
+                      <span>Discount</span>
+                      <span>-₹{discount.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between font-bold text-lg mb-6">
                   <span>Total</span>
-                  <span>₹{totalPrice.toLocaleString()}</span>
+                  <span>₹{(parseFloat(totalPrice) - parseFloat(discount || 0)).toLocaleString()}</span>
                 </div>
                 <button
-                  onClick={() => navigate('/checkout/address')}
+                  onClick={() => {
+                    const finalPrice = parseFloat(totalPrice) - parseFloat(discount || 0);
+                    const userId = getUserId();
+                    localStorage.setItem(`checkoutTotalPrice_${userId}`, finalPrice);
+                    navigate('/checkout/address', {
+                      state: {
+                        totalPrice: finalPrice,
+                        originalPrice: totalPrice,
+                        discount: discount || 0
+                      }
+                    });
+                  }}
                   className="w-full bg-[#8B1E51] text-white py-3 rounded-md hover:bg-[#6e1641] transition-colors font-medium"
                 >
                   Proceed to Checkout

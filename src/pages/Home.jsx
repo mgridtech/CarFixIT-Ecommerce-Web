@@ -5,17 +5,15 @@ import GuaranteedServices from '../components/GuaranteedServices';
 import BannerSlider from "../components/BannerSlider";
 import DownloadApp from "../components/DownloadApp";
 const Home = () => {
-  
+
   return (
     <div>
-    <HeroSection />
-    <ServiceSection/>
-       <EcommerceSection/>
+      <HeroSection />
+      <ServiceSection />
+      <EcommerceSection />
       <BannerSlider />
-      <GuaranteedServices/>
-
-        <DownloadApp />
-
+      <GuaranteedServices />
+      <DownloadApp />
     </div>
   );
 };

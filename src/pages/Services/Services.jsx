@@ -1,5 +1,3 @@
-import React from "react";
- 
 // const baseURL = "http://localhost:3009";
 const baseURL = "https://carfixit-backend.onrender.com";
 
@@ -658,26 +656,52 @@ export const getAppSlots = async (appointmentDate) => {
 
 export const createOrder = async (orderData) => {
   try {
+    console.log("Creating order with data:", orderData);
+    
+    const formattedData = {
+      ...orderData,
+      totalValue: parseFloat(orderData.totalValue).toFixed(2)
+    };
+    
+    console.log("Formatted order data:", formattedData);
+    
     const response = await fetch(`${baseURL}/create/Order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(formattedData),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create order: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("Error response from server:", errorText);
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error("Parsed error:", errorJson);
+      } catch (e) {
+      }
+      
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const result = await response.json();
-    console.log("Order Created Successfully:", result); // Debugging log
-    return { success: true, data: result };
+    const data = await response.json();
+    console.log("Create order API response:", data);
+    
+    return {
+      success: true,
+      data: data.data,
+    };
   } catch (error) {
     console.error("Error creating order:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
+
 
 export const addAddress = async (userId, payload) => {
   try {
@@ -981,14 +1005,75 @@ export const getProductDetails = async (productId, role, carId) => {
 //   }
 // };
 
+export const getCoupons = async () => {
+  try {
+    const response = await fetch(`${baseURL}/fetch/coupons?role=user`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch coupons: ${response.statusText}`);
+    }
+    const result = await response.json();
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error fetching coupons:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const applyCoupon = async (userId, couponId) => {
+  try {
+    const response = await fetch(`${baseURL}/coupon/apply/${userId}/${couponId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response text:", errorText);
+      throw new Error(`Failed to apply coupon: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Coupon applied result:", result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error in applyCoupon:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteCoupon = async (userId) => {
+  try {
+    const response = await fetch(`${baseURL}/coupon/remove/${userId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); 
+      console.error("Error response text:", errorText);
+      throw new Error(`Failed to remove coupon: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Coupon removed successfully:", result); 
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error removing coupon:", error);
+    return { success: false, error: error.message };
+  }
+};
 
 
 const Services = () => {
-  return (
-    <div>
-      <h1>Hello</h1>
-    </div>
-  );
 };
  
 export default Services;

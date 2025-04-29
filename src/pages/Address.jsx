@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import DateTimePicker from '../components/DateTimePicker';
 import { getUserId } from '../utils/auth';
@@ -13,6 +13,7 @@ const Address = () => {
   const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [formData, setFormData] = useState({
     address: '',
     city: '',
@@ -49,6 +50,36 @@ const Address = () => {
 
     fetchAddresses();
   }, []);
+
+  useEffect(() => {
+    const userId = getUserId();
+    if (userId) {
+      // Try to get the price from localStorage
+      const storedPrice = localStorage.getItem(`checkoutTotalPrice_${userId}`);
+      console.log("Retrieved price from localStorage:", storedPrice);
+
+      if (storedPrice) {
+        // Make sure we're parsing it as a float and handle any formatting
+        const parsedPrice = parseFloat(storedPrice);
+        if (!isNaN(parsedPrice)) {
+          setTotalPrice(parsedPrice);
+          console.log("Set total price to:", parsedPrice);
+        } else {
+          console.error("Failed to parse price:", storedPrice);
+        }
+      } else {
+        console.warn("No price found in localStorage for user:", userId);
+
+        // As a fallback, check if there's price in the location state (from navigation)
+        const location = useLocation();
+        if (location.state && location.state.totalPrice) {
+          setTotalPrice(location.state.totalPrice);
+          console.log("Using price from navigation state:", location.state.totalPrice);
+        }
+      }
+    }
+  }, []);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -210,102 +241,125 @@ const Address = () => {
     setShowDateTimePicker(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); 
+  // In your handleSubmit function, modify the code as follows:
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const userId = getUserId();
+  if (!userId) {
+    toast.error("User not logged in. Please log in to add products to the cart.", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    return;
+  }
+
+  const carIdValue = localStorage.getItem(`selectedCar_${userId}`);
+  let carId;
+  try {
+    const parsedCar = JSON.parse(carIdValue);
+    carId = parsedCar.id || parsedCar;
+  } catch (e) {
+    carId = carIdValue;
+  }
+
+  if (!carId || carId === "undefined" || carId === "null") {
+    toast.error("No car selected. Please select a car before proceeding.", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    return;
+  }
+
+  console.log("Selected Car ID:", carId);
+
+  const addressesData = addresses && addresses.data ? addresses.data : [];
+
+  const selectedAddress = addressesData.find(addr => addr.id === selectedAddressId);
+
+  if (serviceType === "pickup" && !selectedAddress) {
+    toast.error("Please select a valid address for pickup service.", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    return;
+  }
+
+  const formattedAddress = serviceType === "pickup" && selectedAddress
+    ? `${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pincode}`
+    : serviceType === "walkin"
+      ? "MGrid Tech, KK Convention Road"
+      : null;
+
+  if (!selectedDateTime) {
+    toast.error("Please select a valid appointment time.", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    return;
+  }
+
+  // Double check the value is correctly being read from localStorage
+  console.log("Total price from state:", totalPrice);
   
-    const userId = getUserId();
-    if (!userId) {
-      toast.error("User not logged in. Please log in to add products to the cart.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
+  // Try different formats for the price to ensure backend compatibility
+  const formattedTotalValue = parseFloat(totalPrice).toFixed(2);
   
-    const carIdValue = localStorage.getItem(`selectedCar_${userId}`);
-    let carId;
-    try {
-      const parsedCar = JSON.parse(carIdValue);
-      carId = parsedCar.id || parsedCar;
-    } catch (e) {
-      carId = carIdValue;
-    }
-  
-    if (!carId || carId === "undefined" || carId === "null") {
-      toast.error("No car selected. Please select a car before proceeding.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-  
-    console.log("Selected Car ID:", carId);
-  
-    const addressesData = addresses && addresses.data ? addresses.data : [];
-  
-    const selectedAddress = addressesData.find(addr => addr.id === selectedAddressId);
-  
-    if (serviceType === "pickup" && !selectedAddress) {
-      toast.error("Please select a valid address for pickup service.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-  
-    const formattedAddress = serviceType === "pickup" && selectedAddress
-      ? `${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pincode}`
-      : serviceType === "walkin"
-        ? "MGrid Tech, KK Convention Road"
-        : null;
-  
-    if (!selectedDateTime) {
-      toast.error("Please select a valid appointment time.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-  
-    const orderData = {
-      userId: parseInt(userId),
-      carId: parseInt(carId),
-      userAddress: formattedAddress,
-      appointmentDate: selectedDateTime.date,
-      appointmentTime: selectedDateTime.appointmentId,
-      appointmentId: selectedDateTime.appointmentId,
-      deliveryType: serviceType === "pickup" ? "delivery" : "walkin",
-      paymentMethod: "Cash on delivery",
-    };
-  
-    console.log("Order Data to Save:", orderData);
-  
-    try {
-      const result = await createOrder(orderData);
-      if (result.success) {
-        console.log("Order saved successfully:", result.data);
-        toast.success("Order created successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-  
-        clearCart();
-        navigate("/order-confirmation");
-      } else {
-        console.error("Failed to save order:", result.error);
-        toast.error(`Failed to save order: ${result.error}`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
-    } catch (error) {
-      console.error("Error saving order:", error);
-      toast.error(`An unexpected error occurred: ${error.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    }
+  const orderData = {
+    userId: parseInt(userId),
+    carId: parseInt(carId),
+    userAddress: formattedAddress,
+    appointmentDate: selectedDateTime.date,
+    appointmentTime: selectedDateTime.appointmentId,
+    appointmentId: selectedDateTime.appointmentId,
+    deliveryType: serviceType === "pickup" ? "delivery" : "walkin",
+    paymentMethod: "Cash on delivery",
+    // Try both field names to see if that's the issue
+    totalValue: formattedTotalValue,
+    totalAmount: formattedTotalValue, // Adding this as a backup in case backend expects this name
   };
+
+  console.log("Final order data being sent:", orderData);
+
+  try {
+    // Before sending, log the data as it would appear in the network request
+    console.log("JSON data for request:", JSON.stringify(orderData));
+    
+    const result = await createOrder(orderData);
+    console.log("Raw API response:", result);
+    
+    if (result.success) {
+      console.log("Order saved successfully:", result.data);
+      
+      // Immediately attempt to fetch the new order to verify the price
+      // Add code here if you have a getOrder function to confirm the price was saved
+      
+      toast.success("Order created successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      // Also save the correct price in localStorage for the confirmation page
+      localStorage.setItem('lastOrderTotalValue', formattedTotalValue);
+      
+      clearCart();
+      navigate("/order-confirmation");
+    } else {
+      console.error("Failed to save order:", result.error);
+      toast.error(`Failed to save order: ${result.error}`, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  } catch (error) {
+    console.error("Error saving order:", error);
+    toast.error(`An unexpected error occurred: ${error.message}`, {
+      position: "top-right",
+      autoClose: 3000,
+    });
+  }
+};
 
 
   console.log("Current addresses in state:", addresses);
@@ -549,7 +603,7 @@ const Address = () => {
               disabled={!isFormValid()}
               className="px-6 py-2 bg-[#8B1E51] text-white rounded-md hover:bg-[#6e1641] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              Proceed to Pay
+              Proceed to Pay (₹{totalPrice.toLocaleString()})
             </button>
           </div>
         </form>

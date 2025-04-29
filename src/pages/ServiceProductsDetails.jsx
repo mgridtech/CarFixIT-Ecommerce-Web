@@ -213,7 +213,7 @@ const ServiceProductsDetails = () => {
                 <ul className="list-disc list-inside text-gray-600">
                   {processedProperties.map((property) => (
                     <li key={property.id}>
-                      {property.name}: {property.value}
+                      {property.name}: {property.value} {property.description}
                     </li>
                   ))}
                 </ul>
