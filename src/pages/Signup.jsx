@@ -57,34 +57,34 @@ export default function Signup() {
   };
   
   const handleVerifyOtp = async () => {
-    const enteredOtp = otp.join('');
-    console.log('Verifying OTP:', enteredOtp);
-  
-    try {
-      const result = await verifyOTP(formData.email, 'registration', enteredOtp);
-      console.log('Service function result:', result);
+  const enteredOtp = otp.join('');
+  console.log('Verifying OTP:', enteredOtp);
+
+  try {
+    const result = await verifyOTP(formData.email, 'registration', enteredOtp);
+    console.log('Service function result:', result);
+    
+    if (result.success) {
+      console.log('OTP verified successfully:', result.data);
+      const otpRecordId = result.data.data.otprecordid;
+      console.log(otpRecordId, "111");
       
-      if (result.success) {
-        console.log('OTP verified successfully:', result.data);
-        const otpRecordId = result.data.data.otprecordid;
-        console.log(otpRecordId, "111");
-        
-        setOtpId(otpRecordId);
-        console.log('Stored otpId:', otpRecordId);
-  
-        setError('OTP verified successfully!');
-        setShowOtpFields(false);
-        setIsOtpVerified(true);
-      } else {
-        console.error('Invalid OTP:', result.error);
-        // Use the error message returned from the service function
-        setError(result.error);
-      }
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      setError(error.message || 'An error occurred while verifying OTP');
+      setOtpId(otpRecordId);
+      console.log('Stored otpId:', otpRecordId);
+
+      setError('OTP verified successfully!');
+      setShowOtpFields(false);
+      setIsOtpVerified(true);
+    } else {
+      console.error('Invalid OTP:', result.error);
+      // Use the error message returned from the service function
+      setError(result.error);
     }
-  };
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    setError(error.message || 'An error occurred while verifying OTP');
+  }
+};
   
   const handleResendOtp = async () => {
     console.log('Resending OTP...');
