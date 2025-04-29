@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { getCars, deleteCar } from '../pages/Services/Services';
 import { getUserId } from '../utils/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCar, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCar, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useSelectedCar } from '../contexts/SelectedCarContext';
-
+import CarCard from './CarCard'; 
 
 const CarsPage = () => {
   const [cars, setCars] = useState([]);
@@ -13,43 +13,64 @@ const CarsPage = () => {
   const [loading, setLoading] = useState(true);
   const { setSelectedCar } = useSelectedCar();
 
-  // Helper function to capitalize the first letter of each word
-  const capitalize = (str) => {
-    return str
-      .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
-
+  // Handle car selection
   const handleCarClick = (car) => {
-    setSelectedCar(car); // Update the selected car in the context and localStorage
+    const userId = getUserId();
+    if (!userId) {
+      console.error('User ID not found. Cannot select car.');
+      return;
+    }
+    
+    // Update context
+    setSelectedCar(car);
+    
+    // Store in localStorage
+    localStorage.setItem(`selectedCar_${userId}`, JSON.stringify(car));
+    
+    // Trigger a car-updated event so all cards refresh their selection state
+    window.dispatchEvent(new Event('car-updated'));
+    
     console.log(`Selected Car: ${car.brand} ${car.model}`);
   };
 
   const handleDeleteCar = async (carId) => {
-    const userId = getUserId(); // Get the current user ID from localStorage or auth utility
+    const userId = getUserId();
     if (!userId) {
       console.error('User ID not found. Cannot delete car.');
       return;
     }
 
     try {
-      const result = await deleteCar(userId, carId); // Call the deleteCar API
-      console.log('Delete Response:', result);
-
+      const result = await deleteCar(userId, carId);
+      
       if (result.success) {
-        // Remove the deleted car from the state
         setCars((prevCars) => prevCars.filter((car) => car.id !== carId));
+        
+        try {
+          const savedSelectedCarString = localStorage.getItem(`selectedCar_${userId}`);
+          if (savedSelectedCarString) {
+            const savedSelectedCar = JSON.parse(savedSelectedCarString);
+            if (Number(savedSelectedCar.id) === Number(carId)) {
+              localStorage.removeItem(`selectedCar_${userId}`);
+              setSelectedCar(null);
+              
+              window.dispatchEvent(new Event('car-updated'));
+            }
+          }
+        } catch (error) {
+          console.error('Error handling selection after delete:', error);
+        }
+        
         console.log(`Car with ID ${carId} deleted successfully.`);
       } else {
         console.error('Failed to delete car:', result.message);
+        setError('Failed to delete the car. Please try again.');
       }
     } catch (error) {
       console.error('Error deleting car:', error);
       setError('Failed to delete the car. Please try again.');
     }
   };
-
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -64,26 +85,22 @@ const CarsPage = () => {
         const result = await getCars(userId);
         console.log('API Response:', result);
 
-        // Check if the API response is valid and contains cars
         if (result && result.success) {
           const apiResponse = result.data;
 
           if (Array.isArray(apiResponse) && apiResponse.length > 0) {
-            // If the response is an array of cars
             setCars(apiResponse);
             console.log('Cars state updated:', apiResponse);
           } else if (apiResponse && apiResponse.data && Array.isArray(apiResponse.data)) {
-            // If the response contains a nested data array
             setCars(apiResponse.data);
             console.log('Cars state updated:', apiResponse.data);
           } else {
-            // No cars found
             console.warn('No cars found for this user.');
-            setCars([]); // Set cars to an empty array
+            setCars([]);
           }
         } else {
           console.error('Invalid response from getCars:', result);
-          setCars([]); // Set cars to an empty array
+          setCars([]);
         }
       } catch (err) {
         console.error('Error fetching cars:', err);
@@ -94,7 +111,18 @@ const CarsPage = () => {
     };
 
     fetchCars();
-  }, []);
+    
+    const handleAuthEvent = () => {
+      console.log('CarsPage detected car-updated event - fetching cars again');
+      fetchCars();
+    };
+    
+    window.addEventListener('car-updated', handleAuthEvent);
+    
+    return () => {
+      window.removeEventListener('car-updated', handleAuthEvent);
+    };
+  }, [setSelectedCar]);
 
   if (loading) {
     return (
@@ -124,31 +152,12 @@ const CarsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cars.map((car) => (
-                <div
+                <CarCard 
                   key={car.id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-6 border border-gray-100 relative cursor-pointer"
-                  onClick={() => handleCarClick(car)} // Handle click event
-                >
-                  {/* Delete Icon */}
-                  <button
-                    className="absolute top-2 right-2 text-[#8B1E51] hover:text-[#6e1641] transition"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent triggering the card click event
-                      handleDeleteCar(car.id); // Call the delete handler
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTrash} className="h-5 w-5" />
-                  </button>
-
-                  <h2 className="text-2xl font-semibold text-[#8B1E51] mb-2">
-                    {capitalize(car.brand)} {capitalize(car.model)}
-                  </h2>
-                  <ul className="text-gray-700 space-y-1 text-sm">
-                    <li><span className="font-medium">Plate Number:</span> {car.plateNumber}</li>
-                    <li><span className="font-medium">Fuel Type:</span> {car.fuelType}</li>
-                    <li><span className="font-medium">Transmission Type:</span> {car.transmission}</li>
-                  </ul>
-                </div>
+                  car={car}
+                  onCarClick={handleCarClick}
+                  onDeleteCar={handleDeleteCar}
+                />
               ))}
             </div>
 

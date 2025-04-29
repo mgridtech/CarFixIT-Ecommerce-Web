@@ -51,11 +51,11 @@ export default function Signup() {
       const result = await generateOTP(formData.email, 'registration'); // Call generateOTP with email and otpType
       if (result.success) {
         console.log('OTP generated successfully:', result.data);
-        setError('OTP has been sent to your email.'); // Set success message
-        setShowOtpFields(true); // Show OTP fields only on success
+        setError('OTP has been sent to your email.'); 
+        setShowOtpFields(true); 
       } else {
         console.error('Failed to generate OTP:', result.error);
-        setError(result.data?.message || 'Failed to generate OTP. Please try again.'); // Use API response message
+        setError(result.data?.message || 'User already exists with this email, Please login'); // Use API response message
         setShowOtpFields(false); // Hide OTP fields on error
       }
     } catch (error) {
@@ -206,7 +206,7 @@ export default function Signup() {
 
           {error && (
             <div
-              className={`mb-4 p-2 text-sm rounded ${error === 'OTP has been sent to your email.' || error === 'OTP verified successfully!'
+              className={`mb-4 p-2 text-sm rounded ${error === 'OTP has been sent to your email.' || error === 'OTP verified successfully!' || error === 'OTP has been resent to your email'
                 ? 'bg-green-50 text-green-600' // Success message styling
                 : 'bg-red-50 text-red-600' // Error message styling
                 }`}

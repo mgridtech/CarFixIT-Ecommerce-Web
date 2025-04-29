@@ -29,6 +29,8 @@ const Navbar = ({ onLogout }) => {
   // Calculate total items in wishlist
   const wishlistItemCount = wishlistItems?.length || 0;
 
+
+
   const updateCartCount = () => {
     const cartsItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
     const uniqueProductCount = cartsItems.length;
@@ -111,7 +113,15 @@ const Navbar = ({ onLogout }) => {
               onClick={handleCarClick}
               className="hidden md:flex items-center bg-white px-3 py-1 rounded-lg shadow-sm cursor-pointer hover:bg-gray-100"
             >
-              <FontAwesomeIcon icon={faCar} className="text-orange-500 mr-2" />
+              {selectedCar.carImage ? (
+                <img
+                  src={`data:image/jpeg;base64,${selectedCar.carImage}`}
+                  alt={`${selectedCar.brand} ${selectedCar.model}`}
+                  className="w-10 h-10 mr-2" // Same size as typical FontAwesome icon
+                />
+              ) : (
+                <div className="w-4 h-4 mr-2 bg-gray-200 rounded-full"></div> // Placeholder if image is missing
+              )}
               <span className="text-sm font-medium">
                 {selectedCar.brand} {selectedCar.model}
               </span>
@@ -176,39 +186,43 @@ const Navbar = ({ onLogout }) => {
             </Link>
           </li> */}
 
-          {/* Cart Icon with Badge */}
-          <li className="relative">
-            <Link
-              to="/cart"
-              className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
-            >
-              <FontAwesomeIcon icon={faShoppingCart} className="text-xl" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-2 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
-          </li>
+          {userId && (
+            <>
+              {/* Cart Icon with Badge */}
+              <li className="relative">
+                <Link
+                  to="/cart"
+                  className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
+                >
+                  <FontAwesomeIcon icon={faShoppingCart} className="text-xl" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-2 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Link>
+              </li>
 
-          <li className="relative">
-            <Link
-              to="/profile"
-              className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
-            >
-              <FontAwesomeIcon icon={faUser} className="text-xl" />
-            </Link>
-          </li>
+              <li className="relative">
+                <Link
+                  to="/profile"
+                  className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
+                >
+                  <FontAwesomeIcon icon={faUser} className="text-xl" />
+                </Link>
+              </li>
 
-          <li>
-            <button
-              onClick={handleLogout}
-              className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
-            >
-              <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
-              Logout
-            </button>
-          </li>
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
+                >
+                  <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
+                  Logout
+                </button>
+              </li>
+            </>
+          )}
         </ul>
 
         {/* Mobile Toggle */}
@@ -280,7 +294,7 @@ const Navbar = ({ onLogout }) => {
                 Contact
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 to="/wishlist"
                 className="block py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center justify-between"
@@ -293,33 +307,37 @@ const Navbar = ({ onLogout }) => {
                   </span>
                 )}
               </Link>
-            </li>
-            <li>
-              <Link
-                to="/cart"
-                className="block py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center justify-between"
-                onClick={() => setIsOpen(false)}
-              >
-                <span>Cart</span>
-                {cartItemCount > 0 && (
-                  <span className="bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Link>
-            </li>
-            <li>
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  handleLogout();
-                }}
-                className="block w-full text-left py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center"
-              >
-                <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
-                Logout
-              </button>
-            </li>
+            </li> */}
+            {userId && (
+              <>
+                <li>
+                  <Link
+                    to="/cart"
+                    className="block py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center justify-between"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <span>Cart</span>
+                    {cartItemCount > 0 && (
+                      <span className="bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleLogout();
+                    }}
+                    className="block w-full text-left py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center"
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
+                    Logout
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
