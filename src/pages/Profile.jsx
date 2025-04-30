@@ -3,9 +3,8 @@ import { getUserId } from "../utils/auth";
 import { getProfile, updateProfile } from "../pages/Services/Services";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Mail, Phone, ShoppingBag, MapPin, Edit, Save, X, Home, Package } from "lucide-react";
+import { User, Mail, Phone, Edit, Save, X, ShoppingBag, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 
 const ProfilePage = () => {
   const [user, setUser] = useState({
@@ -25,10 +24,9 @@ const ProfilePage = () => {
 
   const navigate = useNavigate();
 
-
   useEffect(() => {
     const fetchUserData = async () => {
-      const userId = getUserId(); // Get userId from localStorage
+      const userId = getUserId();
       if (!userId) {
         setError("User ID not found. Please log in again.");
         setLoading(false);
@@ -36,25 +34,16 @@ const ProfilePage = () => {
       }
 
       try {
-        const result = await getProfile(userId); // Call the getProfile method
-        console.log("API Response:", result); // Debugging log
-
+        const result = await getProfile(userId);
         if (result.success) {
-          // Check if data exists and has the expected structure
           const userData = result.data.data || result.data;
-
           const userInfo = {
             name: userData.username || "",
             email: userData.email || "",
-            phone: userData.phone ? String(userData.phone) : "", // Convert to string if it's a number
+            phone: userData.phone ? String(userData.phone) : "",
           };
-
-          // Set user data based on available fields
           setUser(userInfo);
-          // Save original data for cancel functionality
           setOriginalUser(userInfo);
-
-          console.log("Updated User State:", userInfo); // Debugging log
         } else {
           setError(result.error || "Failed to fetch user profile.");
         }
@@ -87,27 +76,23 @@ const ProfilePage = () => {
     setUpdateLoading(true);
 
     try {
-      // Prepare the payload for the API
       const payload = {
         name: user.name,
         email: user.email,
-        phone: user.phone ? parseInt(user.phone, 10) : "" // Convert string to number for the API
+        phone: user.phone ? parseInt(user.phone, 10) : ""
       };
 
       const result = await updateProfile(userId, payload);
-
       if (result.success) {
-        // Update was successful
-        setOriginalUser({ ...user }); // Update original user data
+        setOriginalUser({ ...user });
         setIsEditing(false);
         toast.success("Profile updated successfully!", {
           position: "top-right",
           autoClose: 3000,
         });
       } else {
-        // Handle update error
         setError(result.error || "Failed to update profile.");
-        toast.error(`Failed to update profile.: ${result.error}`, {
+        toast.error(`Failed to update profile: ${result.error}`, {
           position: "top-right",
           autoClose: 3000,
         });
@@ -121,7 +106,6 @@ const ProfilePage = () => {
   };
 
   const handleCancel = () => {
-    // Revert to original data
     setUser({ ...originalUser });
     setIsEditing(false);
   };
@@ -162,10 +146,11 @@ const ProfilePage = () => {
           My Profile
         </h1>
 
-        {/* Main Profile Card */}
+        {/* Main Profile Card - Fixed Alignment */}
         <div className="bg-white shadow-lg rounded-xl p-8 mb-8 border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-3">Personal Information</h2>
 
+          {/* Name Field */}
           <div className="mb-6">
             <label className="block text-gray-700 font-medium mb-2 flex items-center">
               <User className="mr-2 text-[#8B1E51]" size={18} />
@@ -173,6 +158,9 @@ const ProfilePage = () => {
             </label>
             {isEditing ? (
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <User className="text-gray-400" size={18} />
+                </div>
                 <input
                   type="text"
                   name="name"
@@ -181,20 +169,18 @@ const ProfilePage = () => {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1E51] focus:border-transparent outline-none transition"
                   placeholder="Enter your name"
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="text-gray-400" size={16} />
-                </div>
               </div>
             ) : (
-              <p className="text-gray-800 py-2 pl-10 relative">
-                <span className="absolute left-0 top-2">
-                  <User className="text-[#8B1E51]" size={16} />
+              <div className="flex items-center">
+                <User className="text-[#8B1E51] mr-3" size={18} />
+                <span className="text-gray-800 py-2">
+                  {user.name || "Not provided"}
                 </span>
-                {user.name || "Not provided"}
-              </p>
+              </div>
             )}
           </div>
 
+          {/* Email Field */}
           <div className="mb-6">
             <label className="block text-gray-700 font-medium mb-2 flex items-center">
               <Mail className="mr-2 text-[#8B1E51]" size={18} />
@@ -202,6 +188,9 @@ const ProfilePage = () => {
             </label>
             {isEditing ? (
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <Mail className="text-gray-400" size={18} />
+                </div>
                 <input
                   type="email"
                   name="email"
@@ -210,20 +199,18 @@ const ProfilePage = () => {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1E51] focus:border-transparent outline-none transition"
                   placeholder="Enter your email"
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="text-gray-400" size={16} />
-                </div>
               </div>
             ) : (
-              <p className="text-gray-800 py-2 pl-10 relative">
-                <span className="absolute left-0 top-2">
-                  <Mail className="text-[#8B1E51]" size={16} />
+              <div className="flex items-center">
+                <Mail className="text-[#8B1E51] mr-3" size={18} />
+                <span className="text-gray-800 py-2">
+                  {user.email || "Not provided"}
                 </span>
-                {user.email || "Not provided"}
-              </p>
+              </div>
             )}
           </div>
 
+          {/* Phone Field */}
           <div className="mb-8">
             <label className="block text-gray-700 font-medium mb-2 flex items-center">
               <Phone className="mr-2 text-[#8B1E51]" size={18} />
@@ -231,6 +218,9 @@ const ProfilePage = () => {
             </label>
             {isEditing ? (
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <Phone className="text-gray-400" size={18} />
+                </div>
                 <input
                   type="text"
                   name="phone"
@@ -239,20 +229,18 @@ const ProfilePage = () => {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1E51] focus:border-transparent outline-none transition"
                   placeholder="Enter your phone number"
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="text-gray-400" size={16} />
-                </div>
               </div>
             ) : (
-              <p className="text-gray-800 py-2 pl-10 relative">
-                <span className="absolute left-0 top-2">
-                  <Phone className="text-[#8B1E51]" size={16} />
+              <div className="flex items-center">
+                <Phone className="text-[#8B1E51] mr-3" size={18} />
+                <span className="text-gray-800 py-2">
+                  {user.phone || "Not provided"}
                 </span>
-                {user.phone || "Not provided"}
-              </p>
+              </div>
             )}
           </div>
 
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-4">
             {isEditing ? (
               <>
@@ -302,8 +290,8 @@ const ProfilePage = () => {
             onClick={handleOrdersClick}
           >
             <div className="flex items-center mb-4">
-              <div className="bg-[#8B1E51] bg-opacity-10 p-3 rounded-full">
-                <Home className="text-[#8B1E51] h-[14px] w-[14px]" />
+              <div className="bg-[#8B1E51]/10 p-3 rounded-full flex items-center justify-center w-10 h-10">
+                <ShoppingBag className="text-[#8B1E51] h-5 w-5" />
               </div>
               <h3 className="text-lg font-semibold text-gray-800 ml-4">My Orders</h3>
             </div>
@@ -316,8 +304,8 @@ const ProfilePage = () => {
             onClick={handleAddressesClick}
           >
             <div className="flex items-center mb-4">
-              <div className="bg-[#8B1E51] bg-opacity-10 p-3 rounded-full">
-                <Package className="text-[#8B1E51]" size={14} />
+              <div className="bg-[#8B1E51]/10 p-3 rounded-full flex items-center justify-center w-10 h-10">
+                <MapPin className="text-[#8B1E51] h-5 w-5" />
               </div>
               <h3 className="text-lg font-semibold text-gray-800 ml-4">My Addresses</h3>
             </div>

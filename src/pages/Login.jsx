@@ -94,7 +94,7 @@ export default function LoginPage({ onLogin }) {
                 required
               />
             </div>
-            <div className="flex items-center mb-6">
+            {/* <div className="flex items-center mb-6">
               <input
                 id="remember-me"
                 name="remember-me"
@@ -104,7 +104,7 @@ export default function LoginPage({ onLogin }) {
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
               </label>
-            </div>
+            </div> */}
             <button
               type="submit"
               disabled={isLoading}
