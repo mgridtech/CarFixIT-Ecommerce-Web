@@ -142,7 +142,6 @@ const ServiceProductsPage = () => {
       const subcategory = subcategories.find((sub) => sub.id === selectedSubcategory);
       return subcategory ? subcategory.name : `Category ${serviceId}`;
     }
-    return `Category ${serviceId}`;
   };
 
   return (

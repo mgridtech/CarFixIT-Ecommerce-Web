@@ -1,24 +1,70 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { addToCart as addToCartAPI } from '../pages/Services/Services'; // Import the API method
+import { addToCart as addToCartAPI, getCart } from '../pages/Services/Services'; // Import the API methods
 import { getUserId } from '../utils/auth'; // Import the method to get userId
 
 const CartContext = createContext();
 
-
 export const CartProvider = ({ children }) => {
   // Load cart from localStorage on initial render
-  const [cartItems, setCartItems] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    }
-    return [];
-  });
+  const [cartItems, setCartItems] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
-  // Save cart to localStorage whenever it changes
+  // Initialize cart from API or localStorage
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    const fetchCart = async () => {
+      const userId = getUserId();
+      if (!userId) return;
+
+      try {
+        // First try to get cart from API
+        const result = await getCart(userId);
+        if (result.success && result.data) {
+          const cartData = result.data.data || result.data;
+          setCartItems(cartData.cartItems || []);
+          setCartCount(cartData.cartItems?.length || 0);
+          
+          // Store in localStorage for offline access
+          localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartData.cartItems || []));
+        } else {
+          // If API fails, try localStorage
+          const savedCart = localStorage.getItem(`cartItems_${userId}`);
+          if (savedCart) {
+            const parsedCart = JSON.parse(savedCart);
+            setCartItems(parsedCart);
+            setCartCount(parsedCart.length);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        // Fallback to localStorage
+        const savedCart = localStorage.getItem(`cartItems_${userId}`);
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          setCartItems(parsedCart);
+          setCartCount(parsedCart.length);
+        }
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  // Function to update cart count and dispatch event
+  const updateCartCountAndNotify = (items) => {
+    setCartCount(items.length);
+    setCartItems(items);
+    
+    // Update localStorage
+    const userId = getUserId();
+    if (userId) {
+      localStorage.setItem(`cartItems_${userId}`, JSON.stringify(items));
+    }
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent("cart-updated", { 
+      detail: { count: items.length } 
+    }));
+  };
 
   const addToCart = async (item, type, navigate) => {
     const userId = getUserId(); // Retrieve the userId from session or localStorage
@@ -39,26 +85,12 @@ export const CartProvider = ({ children }) => {
       if (result.success) {
         console.log('Product added to cart successfully:', result.data);
 
-        // Update the local cart state with the new item
-        setCartItems((prevItems) => {
-          const existingItem = prevItems.find(
-            (cartItem) => cartItem.id === item.id && cartItem.type === type
-          );
-
-          if (existingItem) {
-            // If the product already exists, redirect to the cart page
-            if (navigate) {
-              navigate('/cart');
-            }
-            return prevItems; // Do not add duplicate entries
-          }
-
-          // Add a new item to the cart
-          return [...prevItems, { ...item, type }];
-        });
-
-        window.dispatchEvent(new Event("cart-updated"));
-
+        // Fetch the updated cart to ensure we have the latest data
+        const cartResult = await getCart(userId);
+        if (cartResult.success && cartResult.data) {
+          const cartData = cartResult.data.data || cartResult.data;
+          updateCartCountAndNotify(cartData.cartItems || []);
+        }
 
         // Optionally navigate to the cart page
         if (navigate) {
@@ -73,35 +105,25 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = (id, type) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => !(item.id === id && item.type === type))
-    );
-    window.dispatchEvent(new Event("cart-updated"));
-
+    const updatedItems = cartItems.filter((item) => !(item.id === id && item.type === type));
+    updateCartCountAndNotify(updatedItems);
   };
 
   const updateQuantity = (id, type, newQuantity) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id && item.type === type
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
+    const updatedItems = cartItems.map((item) =>
+      item.id === id && item.type === type
+        ? { ...item, quantity: newQuantity }
+        : item
     );
-    window.dispatchEvent(new Event("cart-updated"));
+    updateCartCountAndNotify(updatedItems);
   };
 
   const clearCart = () => {
-    setCartItems([]);
-    window.dispatchEvent(new Event("cart-updated"));
+    updateCartCountAndNotify([]);
   };
 
   const updateCartItems = (newCartItems) => {
-    setCartItems(newCartItems);
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      localStorage.setItem(`cartItems_${userId}`, JSON.stringify(newCartItems));
-    }
+    updateCartCountAndNotify(newCartItems);
   };
 
   const totalPrice = cartItems.reduce(
@@ -113,6 +135,7 @@ export const CartProvider = ({ children }) => {
     <CartContext.Provider
       value={{
         cartItems,
+        cartCount,
         addToCart,
         removeFromCart,
         updateQuantity,

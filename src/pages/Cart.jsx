@@ -73,6 +73,11 @@ const Cart = () => {
 
           // Store cart items in localStorage with userId as key
           localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartData.cartItems || []));
+          
+          // Notify navbar about cart update
+          window.dispatchEvent(new CustomEvent("cart-updated", { 
+            detail: { count: cartData.cartItems?.length || 0 } 
+          }));
         } else {
           toast.error(result.error || "Failed to fetch cart.", {
             position: "top-right",
@@ -128,7 +133,6 @@ const Cart = () => {
   };
 
   const removeCoupon = () => {
-
     const userId = getUserId();
     if (!userId) {
       toast.error("User not logged in. Please log in to remove coupon.", {
@@ -183,6 +187,8 @@ const Cart = () => {
             : item
         );
         localStorage.setItem(`cartItems_${userId}`, JSON.stringify(updatedCartItems));
+        
+        // No need to dispatch cart-updated event here as quantity change doesn't affect item count
       } else {
         toast.error(result.error || "Failed to increase quantity.", {
           position: "top-right",
@@ -221,6 +227,8 @@ const Cart = () => {
         );
         setCartItems([...updatedCartItems]); // Force state update
         localStorage.setItem(`cartItems_${userId}`, JSON.stringify(updatedCartItems));
+        
+        // No need to dispatch cart-updated event here as quantity change doesn't affect item count
       } else {
         toast.error(result.error || "Failed to decrease quantity.", {
           position: "top-right",
@@ -260,6 +268,11 @@ const Cart = () => {
 
         // Update localStorage
         localStorage.setItem(`cartItems_${userId}`, JSON.stringify(updatedCartItems));
+        
+        // Dispatch event to update cart count in navbar
+        window.dispatchEvent(new CustomEvent("cart-updated", { 
+          detail: { count: updatedCartItems.length } 
+        }));
       } else {
         toast.error(result.error || "Failed to remove item from cart.", {
           position: "top-right",

@@ -12,28 +12,42 @@ import {
 import logo from "../assets/images/logo.png";
 import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
-import { getCars } from "../pages/Services/Services";
+import { getCars, getCart } from "../pages/Services/Services";
 import { getUserId } from "../utils/auth";
 import { useSelectedCar } from "../contexts/SelectedCarContext";
 
 const Navbar = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0); // State for cart count
+  const [cartItemCount, setCartItemCount] = useState(0);
   const { wishlistItems } = useWishlist();
   const navigate = useNavigate();
   const { selectedCar, setSelectedCar } = useSelectedCar();
+  const { cartCount } = useCart(); // Get cartCount from context
 
   const userId = getUserId();
 
   // Calculate total items in wishlist
   const wishlistItemCount = wishlistItems?.length || 0;
 
-
-
-  const updateCartCount = () => {
-    const cartsItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
-    const uniqueProductCount = cartsItems.length;
-    setCartItemCount(uniqueProductCount);
+  const updateCartCount = async () => {
+    if (!userId) return;
+    
+    try {
+      const result = await getCart(userId);
+      if (result.success) {
+        const cartData = result.data.data || result.data;
+        setCartItemCount(cartData.cartItems?.length || 0);
+      } else {
+        // Fallback to localStorage
+        const cartsItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
+        setCartItemCount(cartsItems.length);
+      }
+    } catch (error) {
+      console.error("Error fetching cart count:", error);
+      // Fallback to localStorage
+      const cartsItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
+      setCartItemCount(cartsItems.length);
+    }
   };
 
   const updateSelectedCar = async () => {
@@ -67,15 +81,33 @@ const Navbar = ({ onLogout }) => {
     updateSelectedCar();
     updateCartCount(); // Initial cart count
 
-    // Listen for cart updates
-    window.addEventListener("cart-updated", updateCartCount);
+    // Function to handle cart update events
+    const handleCartUpdate = (event) => {
+      // If event has detail with count, use it directly
+      if (event.detail && typeof event.detail.count === 'number') {
+        setCartItemCount(event.detail.count);
+      } else {
+        // Otherwise, fetch the latest count
+        updateCartCount();
+      }
+    };
+
+    // Listen for cart updates with the enhanced event listener
+    window.addEventListener("cart-updated", handleCartUpdate);
     window.addEventListener("car-updated", updateSelectedCar);
 
     return () => {
-      window.removeEventListener("cart-updated", updateCartCount);
+      window.removeEventListener("cart-updated", handleCartUpdate);
       window.removeEventListener("car-updated", updateSelectedCar);
     };
   }, []);
+
+  // Set cart count from context when it changes
+  useEffect(() => {
+    if (cartCount !== undefined) {
+      setCartItemCount(cartCount);
+    }
+  }, [cartCount]);
 
   const handleLogout = () => {
     window.dispatchEvent(new Event("car-updated"));
@@ -169,21 +201,6 @@ const Navbar = ({ onLogout }) => {
               Contact
             </Link>
           </li>
-
-          {/* Wishlist Icon with Badge */}
-          {/* <li className="relative">
-            <Link
-              to="/wishlist"
-              className="text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-orange-400 hover:text-white transition flex items-center"
-            >
-              <FontAwesomeIcon icon={faHeart} className="text-xl" />
-              {wishlistItemCount > 0 && (
-                <span className="absolute -top-2 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                  {wishlistItemCount}
-                </span>
-              )}
-            </Link>
-          </li> */}
 
           {userId && (
             <>
@@ -300,20 +317,6 @@ const Navbar = ({ onLogout }) => {
                 Contact
               </Link>
             </li>
-            {/* <li>
-              <Link
-                to="/wishlist"
-                className="block py-3 px-6 hover:bg-orange-400 hover:text-white flex items-center justify-between"
-                onClick={() => setIsOpen(false)}
-              >
-                <span>Wishlist</span>
-                {wishlistItemCount > 0 && (
-                  <span className="bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                    {wishlistItemCount}
-                  </span>
-                )}
-              </Link>
-            </li> */}
             {userId && (
               <>
                 <li>
