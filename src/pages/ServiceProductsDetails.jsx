@@ -226,7 +226,7 @@ const ServiceProductsDetails = () => {
                 >
                   Add to Cart (₹{product.suitableCars[0]?.price.toLocaleString()})
                 </button>
-                <button
+                {/* <button
                   onClick={() => {
                     const wishlistItem = {
                       id: product.id,
@@ -255,7 +255,7 @@ const ServiceProductsDetails = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

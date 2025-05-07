@@ -5,32 +5,49 @@ import { getUserId } from '../utils/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCar, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useSelectedCar } from '../contexts/SelectedCarContext';
-import CarCard from './CarCard'; 
+import CarCard from './CarCard';
 
 const CarsPage = () => {
   const [cars, setCars] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const { setSelectedCar } = useSelectedCar();
+  const { selectedCar, setSelectedCar } = useSelectedCar();
 
-  // Handle car selection
+  // Handle car selection/deselection
   const handleCarClick = (car) => {
     const userId = getUserId();
     if (!userId) {
       console.error('User ID not found. Cannot select car.');
       return;
     }
-    
-    // Update context
-    setSelectedCar(car);
-    
-    // Store in localStorage
-    localStorage.setItem(`selectedCar_${userId}`, JSON.stringify(car));
-    
+
+    // Check if this car is already selected
+    let isCurrentlySelected = false;
+
+    try {
+      const savedSelectedCarString = localStorage.getItem(`selectedCar_${userId}`);
+      if (savedSelectedCarString) {
+        const savedSelectedCar = JSON.parse(savedSelectedCarString);
+        isCurrentlySelected = Number(savedSelectedCar.id) === Number(car.id);
+      }
+    } catch (error) {
+      console.error('Error checking if car is selected:', error);
+    }
+
+    if (isCurrentlySelected) {
+      // Deselect the car
+      setSelectedCar(null);
+      localStorage.removeItem(`selectedCar_${userId}`);
+      console.log(`Deselected Car: ${car.brand} ${car.model}`);
+    } else {
+      // Select the car
+      setSelectedCar(car);
+      localStorage.setItem(`selectedCar_${userId}`, JSON.stringify(car));
+      console.log(`Selected Car: ${car.brand} ${car.model}`);
+    }
+
     // Trigger a car-updated event so all cards refresh their selection state
     window.dispatchEvent(new Event('car-updated'));
-    
-    console.log(`Selected Car: ${car.brand} ${car.model}`);
   };
 
   const handleDeleteCar = async (carId) => {
@@ -42,10 +59,10 @@ const CarsPage = () => {
 
     try {
       const result = await deleteCar(userId, carId);
-      
+
       if (result.success) {
         setCars((prevCars) => prevCars.filter((car) => car.id !== carId));
-        
+
         try {
           const savedSelectedCarString = localStorage.getItem(`selectedCar_${userId}`);
           if (savedSelectedCarString) {
@@ -53,14 +70,14 @@ const CarsPage = () => {
             if (Number(savedSelectedCar.id) === Number(carId)) {
               localStorage.removeItem(`selectedCar_${userId}`);
               setSelectedCar(null);
-              
+
               window.dispatchEvent(new Event('car-updated'));
             }
           }
         } catch (error) {
           console.error('Error handling selection after delete:', error);
         }
-        
+
         console.log(`Car with ID ${carId} deleted successfully.`);
       } else {
         console.error('Failed to delete car:', result.message);
@@ -111,14 +128,14 @@ const CarsPage = () => {
     };
 
     fetchCars();
-    
+
     const handleAuthEvent = () => {
       console.log('CarsPage detected car-updated event - fetching cars again');
       fetchCars();
     };
-    
+
     window.addEventListener('car-updated', handleAuthEvent);
-    
+
     return () => {
       window.removeEventListener('car-updated', handleAuthEvent);
     };
@@ -152,7 +169,7 @@ const CarsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cars.map((car) => (
-                <CarCard 
+                <CarCard
                   key={car.id}
                   car={car}
                   onCarClick={handleCarClick}

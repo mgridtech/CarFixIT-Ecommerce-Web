@@ -206,7 +206,7 @@ const EcommerceProductsDetails = () => {
                 >
                   Add to Cart (₹{(product.suitableCars?.[0]?.price * quantity).toLocaleString()})
                 </button>
-                <button
+                {/* <button
                   onClick={() => {
                     const wishlistItem = {
                       id: product.id,
@@ -244,7 +244,7 @@ const EcommerceProductsDetails = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
