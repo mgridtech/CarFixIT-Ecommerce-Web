@@ -34,6 +34,18 @@ export default function Signup() {
     }));
   };
 
+  const handleOtpChange = (index, value) => {
+    if (/^\d*$/.test(value)) {
+      const newOtp = [...otp];
+      newOtp[index] = value;
+      setOtp(newOtp);
+
+      if (value && index < otp.length - 1 && otpRefs.current[index + 1]) {
+        otpRefs.current[index + 1].focus();
+      }
+    }
+  };
+
   const handleSendOtp = async () => {
     try {
       const result = await generateOTP(formData.email, 'registration');

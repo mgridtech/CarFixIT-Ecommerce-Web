@@ -46,7 +46,6 @@ const EcommerceProductsPage = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Retrieve userId and adminCarId from local storage
         const userId = getUserId(); // Dynamically get the userId
         const selectedCarKey = `selectedCar_${userId}`;
         const selectedCarData = localStorage.getItem(selectedCarKey);
@@ -139,7 +138,7 @@ const EcommerceProductsPage = () => {
             />
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-4">No Car Selected</h2>
-          <p className="text-lg text-gray-600 mb-8">Please select a car to view available products and services.</p>
+          <p className="text-lg text-gray-600 mb-8">Please select a car to view available products.</p>
           <button
             onClick={() => navigate("/cars")}
             className="px-8 py-4 bg-[#8B1E51] text-white font-semibold rounded-lg shadow-md hover:bg-[#6e1641] transition-all transform hover:scale-105 flex items-center justify-center mx-auto"
