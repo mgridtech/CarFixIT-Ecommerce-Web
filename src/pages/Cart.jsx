@@ -562,8 +562,8 @@ const Cart = () => {
                                     });
                                 }}
                                 className={`ml-2 px-4 py-1 rounded-md transition-colors text-sm ${coupon.disabled
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-[#8B1E51] text-white hover:bg-[#6e1641]'
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-[#8B1E51] text-white hover:bg-[#6e1641]'
                                   }`}
                                 disabled={coupon.disabled}
                               >

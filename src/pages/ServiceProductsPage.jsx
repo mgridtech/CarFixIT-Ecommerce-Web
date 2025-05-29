@@ -103,9 +103,9 @@ const ServiceProductsPage = () => {
       <section className="w-full flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="max-w-md mx-auto px-8 py-10 bg-white rounded-xl shadow-lg text-center">
           <div className="mb-6">
-            <img 
-              src="https://img.freepik.com/free-vector/select-concept-illustration_114360-393.jpg" 
-              alt="No car selected" 
+            <img
+              src="https://img.freepik.com/free-vector/select-concept-illustration_114360-393.jpg"
+              alt="No car selected"
               className="w-72 h-72 mx-auto object-contain"
               onError={(e) => {
                 e.target.onerror = null;
@@ -119,10 +119,10 @@ const ServiceProductsPage = () => {
             onClick={() => navigate("/cars")}
             className="px-8 py-4 bg-[#8B1E51] text-white font-semibold rounded-lg shadow-md hover:bg-[#6e1641] transition-all transform hover:scale-105 flex items-center justify-center mx-auto"
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-6 w-6 mr-2" 
-              viewBox="0 0 20 20" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 mr-2"
+              viewBox="0 0 20 20"
               fill="currentColor"
             >
               <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
@@ -134,7 +134,7 @@ const ServiceProductsPage = () => {
       </section>
     );
   }
-  
+
 
   if (error) {
     return (
@@ -151,9 +151,9 @@ const ServiceProductsPage = () => {
       <section className="w-full flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="max-w-md mx-auto px-8 py-10 bg-white rounded-xl shadow-lg text-center">
           <div className="mb-6">
-            <img 
-              src="https://img.freepik.com/free-vector/no-data-concept-illustration_114360-536.jpg" 
-              alt="No products found" 
+            <img
+              src="https://img.freepik.com/free-vector/no-data-concept-illustration_114360-536.jpg"
+              alt="No products found"
               className="w-72 h-72 mx-auto object-contain"
               onError={(e) => {
                 e.target.onerror = null;
@@ -168,10 +168,10 @@ const ServiceProductsPage = () => {
               onClick={() => navigate("/cars")}
               className="px-6 py-3 bg-[#8B1E51] text-white font-semibold rounded-lg shadow-md hover:bg-[#6e1641] transition-all transform hover:scale-105 flex items-center justify-center"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5 mr-2" 
-                viewBox="0 0 20 20" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
                 fill="currentColor"
               >
                 <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
@@ -183,10 +183,10 @@ const ServiceProductsPage = () => {
               onClick={() => navigate(-1)}
               className="px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-all transform hover:scale-105 flex items-center justify-center"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5 mr-2" 
-                viewBox="0 0 20 20" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
                 fill="currentColor"
               >
                 <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -245,11 +245,10 @@ const ServiceProductsPage = () => {
                 <button
                   key={subcat.id}
                   onClick={() => setSelectedSubcategory(subcat.id)}
-                  className={`px-4 py-2 rounded-full transition-colors ${
-                    selectedSubcategory === subcat.id
+                  className={`px-4 py-2 rounded-full transition-colors ${selectedSubcategory === subcat.id
                       ? "bg-[#8B1E51] text-white shadow-md"
                       : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                  }`}
+                    }`}
                 >
                   {subcat.name}
                 </button>
@@ -282,13 +281,30 @@ const ServiceProductsPage = () => {
                   />
                 </div>
                 <h4 className="text-lg font-medium text-gray-800">{product.name}</h4>
-                <p className="text-[#8B1E51] font-bold mt-2">₹{product.price.toLocaleString()}</p>
-                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                {product.discountPrice ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-gray-500 line-through text-base">
+                      ₹{product.price.toLocaleString()}
+                    </span>
+                    <span className="text-[#8B1E51] font-bold text-lg">
+                      ₹{product.discountPrice.toLocaleString()}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[#8B1E51] font-bold mt-2">
+                    ₹{product.price.toLocaleString()}
+                  </p>
+                )}                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                   {product.description || `Status: ${product.status}`}
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
-                    onClick={() => navigate(`/services/${serviceId}/products/${product.id}`)}
+                    onClick={() =>
+                      navigate(
+                        `/services/${serviceId}/products/${product.id}`,
+                        { state: { discountPrice: product.discountPrice || null } } // Pass discountPrice
+                      )
+                    }
                     className="flex-1 bg-[#8B1E51] text-white py-2 rounded-md hover:bg-[#6e1641] transition-colors"
                   >
                     View Product

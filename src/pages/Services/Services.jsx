@@ -171,9 +171,10 @@ export const getServiceProductsByCategoryAndCar = async (categoryId, carId = 1) 
   }
 };
 
-export const getServiceProductDetails = async (productId) => {
+export const getServiceProductDetails = async (productId, carId) => {
   try {
-    const response = await fetch(`${baseURL}/productDetails/${productId}`, {
+    const url = `${baseURL}/productDetails/${productId}?role=user${carId ? `&carId=${carId}` : ""}`;
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -226,9 +227,10 @@ export const getEcommerceProductsByCategoryAndCar = async (categoryId, carId = 1
   }
 };
 
-export const getEcommerceProductDetails = async (productId) => {
+export const getEcommerceProductDetails = async (productId, carId) => {
   try {
-    const response = await fetch(`${baseURL}/productDetails/${productId}`, {
+    const url = `${baseURL}/productDetails/${productId}?role=user${carId ? `&carId=${carId}` : ""}`;
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

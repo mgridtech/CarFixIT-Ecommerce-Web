@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getServiceProductDetails } from "../pages/Services/Services.jsx"; // Import the method
 import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
@@ -9,6 +9,8 @@ import { getUserId } from "../utils/auth.js";
 
 const ServiceProductsDetails = () => {
   const { addToWishlist } = useWishlist(); // Use WishlistContext
+  const location = useLocation();
+  const discountPrice = location.state?.discountPrice || null;
   const { productId } = useParams(); // Get productId from the URL
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -20,7 +22,25 @@ const ServiceProductsDetails = () => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
-        const response = await getServiceProductDetails(productId); // Fetch product details
+        const userId = getUserId();
+        let carId = null;
+        if (userId) {
+          const storedCar = localStorage.getItem(`selectedCar_${userId}`);
+          if (storedCar) {
+            const carObj = JSON.parse(storedCar);
+            const carId = carObj.adminCarId; // <-- Access adminCarId
+            console.log("Selected Car adminCarId:", carId); // <-- Console log the adminCarId
+            const response = await getServiceProductDetails(productId, carId); // Pass adminCarId as carId
+            if (!response.error) {
+              setProduct(response.data);
+            } else {
+              setError(response.error);
+              console.error("Error fetching product details:", response.error);
+            }
+            return;
+          }
+        }
+        const response = await getServiceProductDetails(productId, null);
         if (!response.error) {
           setProduct(response.data);
         } else {
@@ -36,7 +56,8 @@ const ServiceProductsDetails = () => {
     };
 
     fetchProductDetails();
-  }, [productId]); // Trigger fetch when productId changes
+  }, [productId]);
+
 
   const handleAddToCart = () => {
     const userId = getUserId(); // Retrieve the userId from session or localStorage
@@ -64,7 +85,7 @@ const ServiceProductsDetails = () => {
       id: product.id,
       name: product.name,
       image: product.images?.[0]?.image_data,
-      price: product.suitableCars?.[0]?.price,
+      price: product.suitableCarPrice,
       quantity: 1, // Fixed quantity
       productType: "service", // Set productType as "service"
     };
@@ -181,9 +202,20 @@ const ServiceProductsDetails = () => {
             <div className="md:w-1/2 p-6">
               <div className="mb-4">
                 <h1 className="text-3xl font-bold text-gray-800 mt-1">{product.name}</h1>
-                <p className="text-2xl text-[#8B1E51] font-bold mt-2">
-                  ₹{product.suitableCars[0]?.price.toLocaleString()}
-                </p>
+                {discountPrice ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-gray-500 line-through text-2xl">
+                      ₹{product.suitableCarPrice?.toLocaleString()}
+                    </span>
+                    <span className="text-[#8B1E51] font-bold text-2xl">
+                      ₹{discountPrice?.toLocaleString()}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-2xl text-[#8B1E51] font-bold mt-2">
+                    ₹{product.suitableCarPrice?.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6">
@@ -224,7 +256,10 @@ const ServiceProductsDetails = () => {
                   onClick={handleAddToCart}
                   className="flex-1 bg-[#8B1E51] text-white py-3 rounded-md hover:bg-[#6e1641] transition-colors font-medium"
                 >
-                  Add to Cart (₹{product.suitableCars[0]?.price.toLocaleString()})
+                  Add to Cart (
+                  ₹
+                  {(discountPrice ? discountPrice : product.suitableCarPrice)?.toLocaleString()}
+                  )
                 </button>
                 {/* <button
                   onClick={() => {

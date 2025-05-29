@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getEcommerceProductDetails } from "../pages/Services/Services.jsx"; // Import the method
 import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ToastContainer, toast } from "react-toastify"; // Import Toastify
 import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import { getUserId } from "../utils/auth.js";
+
 
 
 const EcommerceProductsDetails = () => {
   const { addToWishlist } = useWishlist(); // Use WishlistContext
-
+  const location = useLocation();
+  const discountPrice = location.state?.discountPrice || null;
   const { productId } = useParams(); // Get productId from the URL
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -22,7 +25,17 @@ const EcommerceProductsDetails = () => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
-        const response = await getEcommerceProductDetails(productId); // Fetch product details
+        const userId = getUserId();
+        let carId = null;
+        if (userId) {
+          const storedCar = localStorage.getItem(`selectedCar_${userId}`);
+          if (storedCar) {
+            const carObj = JSON.parse(storedCar);
+            carId = carObj.adminCarId; // <-- Access adminCarId
+            console.log("Selected Car adminCarId:", carId); // <-- Console log the adminCarId
+          }
+        }
+        const response = await getEcommerceProductDetails(productId, carId); // Pass carId as argument
         if (!response.error) {
           setProduct(response.data);
         } else {
@@ -38,7 +51,7 @@ const EcommerceProductsDetails = () => {
     };
 
     fetchProductDetails();
-  }, [productId]); // Trigger fetch when productId changes
+  }, [productId]);
 
   const increaseQuantity = () => setQuantity((prev) => prev + 1);
   const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -47,8 +60,8 @@ const EcommerceProductsDetails = () => {
     // Show the loader while data is being fetched
     return (
       <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-28 w-28 border-t-2 border-b-2 border-[#8B1E51]"></div>
-    </div>
+        <div className="animate-spin rounded-full h-28 w-28 border-t-2 border-b-2 border-[#8B1E51]"></div>
+      </div>
     );
   }
 
@@ -89,7 +102,7 @@ const EcommerceProductsDetails = () => {
       <div className="max-w-8xl mx-auto px-6">
         {/* Toast Container */}
         <ToastContainer />
-        
+
         {/* Page Heading */}
         <div className="mb-8 text-center mt-12">
           <h1 className="text-4xl font-bold text-[#8B1E51] mb-2">{product.name}</h1>
@@ -134,9 +147,20 @@ const EcommerceProductsDetails = () => {
             <div className="md:w-1/2 p-6">
               <div className="mb-4">
                 <h1 className="text-3xl font-bold text-gray-800 mt-1">{product.name}</h1>
-                <p className="text-2xl text-[#8B1E51] font-bold mt-2">
-                  ₹{(product.suitableCars?.[0]?.price * quantity).toLocaleString()}
-                </p>
+                {discountPrice ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-gray-500 line-through text-2xl">
+                      ₹{(product.suitableCarPrice * quantity).toLocaleString()}
+                    </span>
+                    <span className="text-[#8B1E51] font-bold text-2xl">
+                      ₹{(discountPrice * quantity).toLocaleString()}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-2xl text-[#8B1E51] font-bold mt-2">
+                    ₹{(product.suitableCarPrice * quantity).toLocaleString()}
+                  </p>
+                )}
               </div>
 
               {/* <div className="mb-6">
@@ -184,10 +208,9 @@ const EcommerceProductsDetails = () => {
                       id: product.id,
                       name: product.name,
                       image: product.images?.[0]?.image_data,
-                      price: product.suitableCars?.[0]?.price,
-                      quantity: quantity, // Pass the updated quantity
+                      price: discountPrice || product.suitableCarPrice,
+                      quantity: quantity,
                     };
-                    console.log("Adding to cart:", cartItem); // Debugging log
                     addToCart(cartItem, "ecommerce");
                     toast.success("Product added to cart successfully!", {
                       position: "top-right",
@@ -200,11 +223,14 @@ const EcommerceProductsDetails = () => {
                     });
                     setTimeout(() => {
                       navigate("/cart");
-                    }, 3000); // Redirect after 3 seconds
+                    }, 3000);
                   }}
                   className="flex-1 bg-[#8B1E51] text-white py-3 rounded-md hover:bg-[#6e1641] transition-colors font-medium"
                 >
-                  Add to Cart (₹{(product.suitableCars?.[0]?.price * quantity).toLocaleString()})
+                  Add to Cart (
+                  ₹
+                  {(discountPrice ? discountPrice * quantity : product.suitableCarPrice * quantity).toLocaleString()}
+                  )
                 </button>
                 {/* <button
                   onClick={() => {
