@@ -17,6 +17,9 @@ const Cart = () => {
   const [discount, setDiscount] = useState(0);
   const [coupons, setCoupons] = useState([]);
   const [filteredCoupons, setFilteredCoupons] = useState([]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [totalBeforeCoupon, setTotalBeforeCoupon] = useState(0);
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +55,7 @@ const Cart = () => {
 
   useEffect(() => {
     const fetchCart = async () => {
-      const userId = getUserId(); // Retrieve the userId from session or localStorage
+      const userId = getUserId();
       if (!userId) {
         toast.error("User not logged in. Please log in to view your cart.", {
           position: "top-right",
@@ -63,21 +66,42 @@ const Cart = () => {
       }
 
       try {
-        const result = await getCart(userId); // Call the getCart method
-        console.log("getCart Result:", result); // Log the entire result object
+        const result = await getCart(userId);
+        console.log("getCart Result:", result);
 
         if (result.success) {
-          // Access the correct data structure based on your API response
           const cartData = result.data.data || result.data;
-          console.log("Cart Items Response:", cartData.cartItems); // Log the cart items
+          console.log("Cart Items Response:", cartData.cartItems);
 
-          setCartItems(cartData.cartItems || []); // Set the cart items
-          setTotalPrice(cartData.totalValue || 0); // Set the total price
+          setCartItems(cartData.cartItems || []);
+          setTotalPrice(cartData.totalValue || 0);
+          console.log("Total Value from API:", cartData.totalValue);
+          console.log("Setting totalPrice to:", cartData.totalValue || 0);
 
-          // Store cart items in localStorage with userId as key
+          // Handle coupon data from API response
+          if (cartData.coupon) {
+            setAppliedCoupon(cartData.coupon);
+            setTotalBeforeCoupon(cartData.totalBeforeCoupon || 0);
+            setCouponDiscount(cartData.totalCouponDiscount || 0);
+            setSelectedCoupon({
+              id: cartData.coupon.id,
+              code: cartData.coupon.code,
+              type: cartData.coupon.discountType.toLowerCase(),
+              discountApply: cartData.coupon.discountAmount,
+              categoryId: cartData.coupon.categoryId
+            });
+            setDiscount(cartData.totalCouponDiscount || 0);
+          } else {
+            // Reset coupon states if no coupon applied
+            setAppliedCoupon(null);
+            setTotalBeforeCoupon(0);
+            setCouponDiscount(0);
+            setSelectedCoupon(null);
+            setDiscount(0);
+          }
+
           localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartData.cartItems || []));
 
-          // Notify navbar about cart update
           window.dispatchEvent(new CustomEvent("cart-updated", {
             detail: { count: cartData.cartItems?.length || 0 }
           }));
@@ -98,17 +122,19 @@ const Cart = () => {
       }
     };
 
+
     fetchCart();
   }, []);
 
-  // Recalculate the total price whenever cartItems changes
   useEffect(() => {
-    const newTotalPrice = cartItems.reduce(
-      (total, item) => total + item.finalPrice * item.quantity,
-      0
-    );
-    setTotalPrice(newTotalPrice);
-  }, [cartItems]);
+    if (!appliedCoupon) {
+      const newTotalPrice = cartItems.reduce(
+        (total, item) => total + item.finalPrice * item.quantity,
+        0
+      );
+      setTotalPrice(newTotalPrice);
+    }
+  }, [cartItems, appliedCoupon]);
 
   useEffect(() => {
     if (cartItems.length > 0 && coupons.length > 0) {
@@ -190,15 +216,20 @@ const Cart = () => {
 
     deleteCoupon(userId)
       .then(response => {
-        if (response.success) {
-          toast.info(`Coupon ${selectedCoupon.code} removed`, {
+        console.log("Remove coupon response:", response); // Debug log
+        // Check for success in response or if response itself indicates success
+        if (response && (response.success === true || response.success !== false)) {
+          toast.info(`Coupon removed successfully`, {
             position: "top-right",
-            autoClose: 3000,
+            autoClose: 2000,
           });
-          setSelectedCoupon(null);
-          setDiscount(0);
+
+          // Reload the page to show changes
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         } else {
-          toast.error(response.error || "Failed to remove coupon", {
+          toast.error(response?.error || response?.message || "Failed to remove coupon", {
             position: "top-right",
             autoClose: 3000,
           });
@@ -212,6 +243,7 @@ const Cart = () => {
         });
       });
   };
+
 
   const increaseQuantity = async (cartItemId) => {
     const userId = getUserId();
@@ -479,6 +511,12 @@ const Cart = () => {
                 <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
 
                 <div className="mb-4">
+                  {appliedCoupon && (
+                    <div className="flex justify-between mb-2">
+                      <span>Subtotal</span>
+                      <span>₹{totalBeforeCoupon.toLocaleString()}</span>
+                    </div>
+                  )}
                   {/* Coupon Section */}
                   <div className="mb-4 border-t pt-4">
                     <div
@@ -493,6 +531,28 @@ const Cart = () => {
                         className={`h-4 w-4 transition-transform ${couponOpen ? 'transform rotate-180' : ''}`}
                       />
                     </div>
+
+                    {/* Show applied coupon details */}
+                    {appliedCoupon && (
+                      <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium text-green-800">
+                              Coupon Applied: {appliedCoupon.code}
+                            </div>
+                            <div className="text-sm text-green-600">
+                              Discount: ₹{couponDiscount.toLocaleString()}
+                            </div>
+                          </div>
+                          <button
+                            onClick={removeCoupon}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {couponOpen && (
                       <div className="mt-2 border rounded-md p-2 max-h-60 overflow-y-auto">
@@ -529,6 +589,17 @@ const Cart = () => {
                                 onClick={() => {
                                   if (coupon.disabled) return;
 
+                                  if (appliedCoupon && appliedCoupon.id === coupon.id) {
+                                    toast.info("This coupon is already applied");
+                                    return;
+                                  }
+
+                                  // Add this check if any coupon is applied
+                                  if (appliedCoupon) {
+                                    toast.error("Remove the current coupon before applying a new one");
+                                    return;
+                                  }
+
                                   const userId = getUserId();
                                   if (!userId) {
                                     toast.error("Please login to apply coupons");
@@ -537,17 +608,20 @@ const Cart = () => {
 
                                   applyCoupon(userId, coupon.id)
                                     .then(response => {
-                                      if (response.success) {
-                                        const discountAmount = parseFloat(coupon.discountApply);
-                                        setSelectedCoupon(coupon);
-                                        setDiscount(discountAmount);
-                                        setCouponOpen(false);
+                                      console.log("Apply coupon response:", response); // Debug log
+                                      // Check for success in response or if response itself indicates success
+                                      if (response && (response.success === true || response.success !== false)) {
                                         toast.success(`Coupon ${coupon.code} applied successfully!`, {
                                           position: "top-right",
-                                          autoClose: 3000,
+                                          autoClose: 2000,
                                         });
+
+                                        // Reload the page to show changes
+                                        setTimeout(() => {
+                                          window.location.reload();
+                                        }, 2000);
                                       } else {
-                                        toast.error(response.error || "Failed to apply coupon", {
+                                        toast.error(response?.error || response?.message || "Failed to apply coupon", {
                                           position: "top-right",
                                           autoClose: 3000,
                                         });
@@ -561,13 +635,13 @@ const Cart = () => {
                                       });
                                     });
                                 }}
-                                className={`ml-2 px-4 py-1 rounded-md transition-colors text-sm ${coupon.disabled
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  : 'bg-[#8B1E51] text-white hover:bg-[#6e1641]'
+                                className={`ml-2 px-4 py-1 rounded-md transition-colors text-sm ${coupon.disabled || (appliedCoupon && appliedCoupon.id === coupon.id) || appliedCoupon
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-[#8B1E51] text-white hover:bg-[#6e1641]'
                                   }`}
-                                disabled={coupon.disabled}
+                                disabled={coupon.disabled || (appliedCoupon && appliedCoupon.id === coupon.id) || appliedCoupon}
                               >
-                                Apply
+                                {appliedCoupon && appliedCoupon.id === coupon.id ? 'Applied' : 'Apply'}
                               </button>
                             </div>
                           ))
@@ -588,7 +662,8 @@ const Cart = () => {
                       </div>
                     )}
 
-                    {selectedCoupon && (
+
+                    {/* {selectedCoupon && (
                       <div className="mt-2">
                         <div className="flex justify-between text-orange-800">
                           <span>Discount Applied:</span>
@@ -604,32 +679,32 @@ const Cart = () => {
                           Remove coupon
                         </button>
                       </div>
-                    )}
+                    )} */}
                   </div>
 
-                  {/* Discounts */}
-                  {discount > 0 && (
+                  {/* Show discount line */}
+                  {couponDiscount > 0 && (
                     <div className="flex justify-between mb-2 text-green-600">
-                      <span>Discount</span>
-                      <span>-₹{discount.toLocaleString()}</span>
+                      <span>Coupon Discount</span>
+                      <span>-₹{couponDiscount.toLocaleString()}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex justify-between font-bold text-lg mb-6">
                   <span>Total</span>
-                  <span>₹{(parseFloat(totalPrice) - parseFloat(discount || 0)).toLocaleString()}</span>
+                  <span>₹{totalPrice.toLocaleString()}</span>
                 </div>
                 <button
                   onClick={() => {
-                    const finalPrice = parseFloat(totalPrice) - parseFloat(discount || 0);
                     const userId = getUserId();
-                    localStorage.setItem(`checkoutTotalPrice_${userId}`, finalPrice);
+                    localStorage.setItem(`checkoutTotalPrice_${userId}`, totalPrice);
                     navigate('/checkout/address', {
                       state: {
-                        totalPrice: finalPrice,
-                        originalPrice: totalPrice,
-                        discount: discount || 0
+                        totalPrice: totalPrice,
+                        originalPrice: appliedCoupon ? totalBeforeCoupon : totalPrice,
+                        discount: couponDiscount || 0,
+                        appliedCoupon: appliedCoupon
                       }
                     });
                   }}
